@@ -1,11 +1,11 @@
 variable "resource_group_name" {
   description = "Azure RG Name"
-  default = "rg-fonteyn-dev"
+  default     = "rg-fonteyn-dev"
 }
 
 variable "subscription_id" {
   description = "Azure Subscription ID"
-  type = string
+  type        = string
 }
 
 variable "location" {
