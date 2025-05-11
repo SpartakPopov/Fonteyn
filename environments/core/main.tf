@@ -51,3 +51,30 @@ resource "azurerm_virtual_network_peering" "hub_to_dev" {
   allow_gateway_transit   = false
 }
 
+#Log Analytics Workspace
+resource "azurerm_log_analytics_workspace" "core_logs" {
+  name                = "core-log-workspace"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.rg-core.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+
+  tags = var.tags
+}
+
+#Backup Storage
+resource "azurerm_storage_account" "core_backup" {
+  name                     = "fonteynbackups"
+  resource_group_name      = azurerm_resource_group.rg-core.name
+  location                 = var.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  tags                     = var.tags
+}
+
+#Backup Container
+resource "azurerm_storage_container" "backup" {
+  name                  = "backup"
+  storage_account_id    = azurerm_storage_account.core_backup.id
+  container_access_type = "private"
+}

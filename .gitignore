@@ -1,3 +1,7 @@
 environments/**/terraform.tfvars
 environments/**/.terraform
 environments/**/.terraform.lock.hcl
+environments/shared/dev/main.tf
+environments/shared/dev/outputs.tf
+environments/shared/dev/providers.tf
+environments/shared/dev/variables.tf
