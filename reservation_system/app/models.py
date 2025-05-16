@@ -1,7 +1,7 @@
 from .security import hash_password, check_password 
 
 users = []
-reservations = []
+units = []
 bookings = []
 
 class User:
@@ -31,34 +31,34 @@ class User:
     def verify_password(self, password):
         return check_password(password, self.password)
 
-    def add_rental(self, Reservation_id, start_date, end_date):
+    def add_rental(self, unit_id, start_date, end_date):
         rental_record = {
-            "reservation_id": Reservation_id,
+            "unit_id": unit_id,
             "start_date": start_date,
             "end_date": end_date,
             "status": "active"
         }
         self.rental_history.append(rental_record)
         
-class Reservations:
-    def __init__(self, Reservation_id, Year, Availability, Price_per_day):
-        self.reservation_id = Reservation_id
+class unit:
+    def __init__(self, Unit_id, Year, Availability, Price_per_day):
+        self.unit_id = Unit_id
         self.year = Year
         self.availability = Availability
         self.price_per_day = Price_per_day
     def to_dict(self):
         return {
-            "reservation_id": self.reservation_id,
+            "unit_id": self.unit_id,
             "year": self.year,
             "availabile": self.availability, 
             "Price per day": self.price_per_day
         }
         
 class Booking:
-    def __init__(self, Booking_id, User_id, Reservation_id, Start_date, End_date, Status="active"):
+    def __init__(self, Booking_id, User_id, Unit_id, Start_date, End_date, Status="active"):
         self.booking_id = Booking_id
         self.user_id = User_id
-        self.reservation_id = Reservation_id
+        self.unit_id = Unit_id
         self.start_date = Start_date
         self.end_date = End_date
         self.status = Status
@@ -66,7 +66,7 @@ class Booking:
         return{
             "booking_id": self.booking_id,
             "user_id": self.user_id,
-            "reservation_id": self.reservation_id,
+            "unit_id": self.unit_id,
             "Start Date": self.start_date,
             "End Date": self.end_date,
             "Status": self.status
