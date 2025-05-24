@@ -61,20 +61,3 @@ resource "azurerm_log_analytics_workspace" "core_logs" {
 
   tags = var.tags
 }
-
-#Backup Storage
-resource "azurerm_storage_account" "core_backup" {
-  name                     = "fonteynbackups"
-  resource_group_name      = azurerm_resource_group.rg-core.name
-  location                 = var.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  tags                     = var.tags
-}
-
-#Backup Container
-resource "azurerm_storage_container" "backup" {
-  name                  = "backup"
-  storage_account_id    = azurerm_storage_account.core_backup.id
-  container_access_type = "private"
-}

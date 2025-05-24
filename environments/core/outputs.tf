@@ -13,7 +13,3 @@ output "hub_resource_group" {
 output "log_analytics_id" {
   value = azurerm_log_analytics_workspace.core_logs.id
 }
-
-output "backup_storage_id" {
-  value = azurerm_storage_account.core_backup.id
-}
