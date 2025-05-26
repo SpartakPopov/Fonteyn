@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero">
+    <h1>Welcome to Fonteyn Holiday Parks</h1>
+    <p>Experience luxury and comfort in the heart of nature</p>
+    {% if 'user_id' not in session %}
+        <a href="{{ url_for('register') }}" class="cta-button">Start Your Journey</a>
+    {% else %}
+        <a href="{{ url_for('make_reservation') }}" class="cta-button">Book Your Stay</a>
+    {% endif %}
+</div>
+
+<div class="welcome-section">
+    <h2>Discover Your Perfect Holiday</h2>
+    <p>Nestled in the most picturesque locations, Fonteyn Holiday Parks offers an unforgettable escape from the ordinary. Our carefully curated selection of accommodations ensures that every guest finds their ideal holiday home.</p>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <h2>Luxury Villas</h2>
+        <p>Experience ultimate comfort in our spacious villas, complete with private pools and landscaped gardens. Perfect for families or groups seeking a premium holiday experience.</p>
+        <ul class="amenities-list">
+            <li>Private swimming pool</li>
+            <li>Fully equipped kitchen</li>
+            <li>Multiple bedrooms and bathrooms</li>
+            <li>Outdoor dining area</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <h2>Family Cottages</h2>
+        <p>Our cozy cottages provide the perfect setting for memorable family getaways. Enjoy the warmth of a home away from home with all modern conveniences.</p>
+        <ul class="amenities-list">
+            <li>Family-friendly layout</li>
+            <li>Modern amenities</li>
+            <li>Private garden</li>
+            <li>Entertainment system</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <h2>Studio Apartments</h2>
+        <p>Modern, efficiently designed studios ideal for couples or solo travelers. Enjoy comfort and convenience in a stylish setting.</p>
+        <ul class="amenities-list">
+            <li>Contemporary design</li>
+            <li>Kitchenette</li>
+            <li>Smart TV</li>
+            <li>Work-friendly space</li>
+        </ul>
+    </div>
+</div>
+
+<div class="park-features">
+    <h2>Park Amenities</h2>
+    <div class="amenities-grid">
+        <div class="amenity-item">
+            <h3>Recreation</h3>
+            <p>Tennis courts, mini-golf, and children's playground</p>
+        </div>
+        <div class="amenity-item">
+            <h3>Dining</h3>
+            <p>Restaurant, café, and convenience store on-site</p>
+        </div>
+        <div class="amenity-item">
+            <h3>Wellness</h3>
+            <p>Indoor swimming pool, sauna, and fitness center</p>
+        </div>
+        <div class="amenity-item">
+            <h3>Services</h3>
+            <p>24/7 reception, bike rental, and daily housekeeping</p>
+        </div>
+    </div>
+</div>
+
+<div class="location-section">
+    <h2>Location</h2>
+    <p>Located in a tranquil setting surrounded by nature, yet just minutes away from local attractions, shopping, and dining. Our holiday park offers the perfect balance of peaceful retreat and convenient access to activities.</p>
+    <div class="map-container">
+        <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2486.0403711218893!2d5.477145776677612!3d51.45170917181433!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c6d92199730073%3A0x1c3e8911bd503b5d!2sRachelsmolen%201%2C%205612%20MA%20Eindhoven!5e0!3m2!1sen!2snl!4v1709837144121!5m2!1sen!2snl"
+            width="100%"
+            height="450"
+            style="border:0;"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+    </div>
+    <div class="location-details">
+        <p><strong>Address:</strong> Rachelsmolen 1, 5612 MA Eindhoven, Netherlands</p>
+        <p><strong>Getting Here:</strong> Easy access from major highways and public transportation. The location is just minutes from Eindhoven city center.</p>
+    </div>
+</div>
+
+<div class="cta-section">
+    <h2>Ready to Experience Fonteyn Holiday Parks?</h2>
+    {% if 'user_id' not in session %}
+        <a href="{{ url_for('register') }}" class="cta-button">Register Now</a>
+    {% else %}
+        <a href="{{ url_for('make_reservation') }}" class="cta-button">Book Your Stay</a>
+    {% endif %}
+</div>
+{% endblock %} 

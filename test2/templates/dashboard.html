@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Welcome, {{ user.username }}!</h2>
+    
+    <div class="dashboard-section">
+        <h3>Your Reservations</h3>
+        {% if reservations %}
+            <div class="reservations-grid">
+                {% for reservation in reservations %}
+                    <div class="reservation-card">
+                        <h4>{{ reservation.accommodation_type }}</h4>
+                        <p><strong>Check-in:</strong> {{ reservation.check_in.strftime('%Y-%m-%d') }}</p>
+                        <p><strong>Check-out:</strong> {{ reservation.check_out.strftime('%Y-%m-%d') }}</p>
+                        <p><strong>Guests:</strong> {{ reservation.guests }}</p>
+                        <p><strong>Status:</strong> {{ reservation.status }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>You don't have any reservations yet.</p>
+            <a href="{{ url_for('make_reservation') }}" class="cta-button">Make a Reservation</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

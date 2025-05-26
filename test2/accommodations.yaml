@@ -1,0 +1,74 @@
+villa:
+  name: Luxury Villa
+  type: villa
+  price: 200
+  description: Spacious luxury villa with private pool, stunning sea views, and premium amenities for the ultimate holiday experience.
+  bedrooms: 3
+  bathrooms: 2
+  max_guests: 6
+  size: 200m²
+  image: villa.jpg
+  location_description: Located in the premium section of our park with direct access to the beach and stunning sea views.
+  amenities:
+    - name: Private Pool
+      icon: fa-swimming-pool
+    - name: Gourmet Kitchen
+      icon: fa-utensils
+    - name: Sea View
+      icon: fa-water
+    - name: Air Conditioning
+      icon: fa-snowflake
+    - name: WiFi
+      icon: fa-wifi
+    - name: Parking
+      icon: fa-parking
+
+cottage:
+  name: Family Cottage
+  type: cottage
+  price: 150
+  description: Perfect for families, featuring a private garden, children's play area, and all the comforts of home.
+  bedrooms: 2
+  bathrooms: 1
+  max_guests: 4
+  size: 120m²
+  image: cottage.jpg
+  location_description: Situated in our family-friendly area, close to the playground and park facilities.
+  amenities:
+    - name: Private Garden
+      icon: fa-tree
+    - name: BBQ Area
+      icon: fa-fire
+    - name: Play Area
+      icon: fa-child
+    - name: Fully Equipped Kitchen
+      icon: fa-utensils
+    - name: WiFi
+      icon: fa-wifi
+    - name: Parking
+      icon: fa-parking
+
+studio:
+  name: Studio Apartment
+  type: studio
+  price: 100
+  description: Contemporary studio apartment ideal for couples or solo travelers, with modern amenities and a cozy atmosphere.
+  bedrooms: 1
+  bathrooms: 1
+  max_guests: 2
+  size: 45m²
+  image: studio.jpg
+  location_description: Centrally located in the park, close to all amenities and the main reception.
+  amenities:
+    - name: Modern Kitchen
+      icon: fa-utensils
+    - name: Balcony
+      icon: fa-door-open
+    - name: Park View
+      icon: fa-tree
+    - name: Air Conditioning
+      icon: fa-snowflake
+    - name: WiFi
+      icon: fa-wifi
+    - name: TV
+      icon: fa-tv 

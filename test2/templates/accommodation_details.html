@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ accommodation.name }} - Fonteyn Holiday Parks{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="accommodation-details">
+        <div class="accommodation-header">
+            <h1>{{ accommodation.name }}</h1>
+            <p class="price">€{{ accommodation.price }} per night</p>
+        </div>
+
+        <div class="accommodation-gallery">
+            <!-- Placeholder for images - you can add actual images later -->
+            <div class="main-image">
+                <img src="{{ url_for('static', filename='images/' + accommodation.image) }}" alt="{{ accommodation.name }}">
+            </div>
+            <div class="thumbnail-gallery">
+                <!-- Add more thumbnails here -->
+            </div>
+        </div>
+
+        <div class="accommodation-info">
+            <div class="info-section">
+                <h2>Description</h2>
+                <p>{{ accommodation.description }}</p>
+            </div>
+
+            <div class="info-section">
+                <h2>Amenities</h2>
+                <div class="amenities-grid">
+                    {% for amenity in accommodation.amenities %}
+                    <div class="amenity-item">
+                        <i class="fas {{ amenity.icon }}"></i>
+                        <span>{{ amenity.name }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h2>Details</h2>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="label">Bedrooms:</span>
+                        <span class="value">{{ accommodation.bedrooms }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Bathrooms:</span>
+                        <span class="value">{{ accommodation.bathrooms }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Max Guests:</span>
+                        <span class="value">{{ accommodation.max_guests }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Size:</span>
+                        <span class="value">{{ accommodation.size }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h2>Location</h2>
+                <p>{{ accommodation.location_description }}</p>
+            </div>
+        </div>
+
+        <div class="booking-actions">
+            <a href="{{ url_for('booking', type=accommodation.type) }}" class="cta-button">Proceed to Booking</a>
+            <a href="{{ url_for('make_reservation') }}" class="cancel-button">Back to Accommodations</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

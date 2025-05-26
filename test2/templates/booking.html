@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Book {{ accommodation.name }} - Fonteyn Holiday Parks{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="booking-page">
+        <div class="booking-header">
+            <h1>Book Your Stay</h1>
+            <div class="selected-accommodation">
+                <h2>{{ accommodation.name }}</h2>
+                <p class="price">€{{ accommodation.price }} per night</p>
+            </div>
+        </div>
+
+        <div class="booking-content">
+            <div class="booking-form-container">
+                <form method="POST" action="{{ url_for('make_reservation') }}" class="booking-form">
+                    <input type="hidden" name="accommodation_type" value="{{ accommodation.type }}">
+                    
+                    <div class="form-section">
+                        <h3>Select Dates</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="check_in">Check-in Date:</label>
+                                <input type="date" id="check_in" name="check_in" required min="{{ today }}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="check_out">Check-out Date:</label>
+                                <input type="date" id="check_out" name="check_out" required min="{{ today }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Guest Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="guests">Number of Guests:</label>
+                                <input type="number" id="guests" name="guests" min="1" max="{{ accommodation.max_guests }}" required>
+                                <small>Maximum {{ accommodation.max_guests }} guests allowed</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Special Requests</h3>
+                        <div class="form-group">
+                            <label for="special_requests">Any special requests or requirements?</label>
+                            <textarea id="special_requests" name="special_requests" rows="3" placeholder="Please let us know if you have any special requirements..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Vehicle Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Will you be bringing a vehicle?</label>
+                                <div class="yes-no-buttons">
+                                    <input type="radio" id="has_vehicle_yes" name="has_vehicle" value="yes" onchange="toggleLicensePlate()" class="radio-hidden">
+                                    <label for="has_vehicle_yes" class="yes-no-button">Yes</label>
+                                    
+                                    <input type="radio" id="has_vehicle_no" name="has_vehicle" value="no" onchange="toggleLicensePlate()" class="radio-hidden" checked>
+                                    <label for="has_vehicle_no" class="yes-no-button">No</label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" id="license_plate_group" style="display: none;">
+                                <label for="license_plate">License Plate Number:</label>
+                                <input type="text" id="license_plate" name="license_plate" placeholder="Enter license plate number">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="booking-summary">
+                        <h3>Booking Summary</h3>
+                        <div class="summary-details">
+                            <div class="summary-item">
+                                <span>Accommodation:</span>
+                                <span>{{ accommodation.name }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>Price per night:</span>
+                                <span>€{{ accommodation.price }}</span>
+                            </div>
+                            <div class="summary-item total">
+                                <span>Total price:</span>
+                                <span id="total-price">€0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="cta-button">Confirm Booking</button>
+                        <button type="button" class="cancel-button" onclick="window.location.href='{{ url_for('accommodation_details', type=accommodation.type) }}'">
+                            Back to Details
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="accommodation-summary">
+                <div class="summary-card">
+                    <img src="{{ url_for('static', filename='images/' + accommodation.image) }}" alt="{{ accommodation.name }}">
+                    <div class="summary-info">
+                        <h3>{{ accommodation.name }}</h3>
+                        <div class="key-features">
+                            <span><i class="fas fa-bed"></i> {{ accommodation.bedrooms }} Bedrooms</span>
+                            <span><i class="fas fa-bath"></i> {{ accommodation.bathrooms }} Bathrooms</span>
+                            <span><i class="fas fa-users"></i> Up to {{ accommodation.max_guests }} Guests</span>
+                        </div>
+                        <div class="amenities-preview">
+                            {% for amenity in accommodation.amenities[:3] %}
+                            <span><i class="fas {{ amenity.icon }}"></i> {{ amenity.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Calculate total price based on selected dates
+function calculateTotal() {
+    const checkIn = new Date(document.getElementById('check_in').value);
+    const checkOut = new Date(document.getElementById('check_out').value);
+    
+    if (checkIn && checkOut && checkOut > checkIn) {
+        const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+        const total = nights * {{ accommodation.price }};
+        document.getElementById('total-price').textContent = `€${total}`;
+    } else {
+        document.getElementById('total-price').textContent = '€0';
+    }
+}
+
+function toggleLicensePlate() {
+    const hasVehicle = document.querySelector('input[name="has_vehicle"]:checked').value;
+    const licensePlateGroup = document.getElementById('license_plate_group');
+    const licensePlateInput = document.getElementById('license_plate');
+    
+    if (hasVehicle === 'yes') {
+        licensePlateGroup.style.display = 'block';
+        licensePlateInput.required = true;
+    } else {
+        licensePlateGroup.style.display = 'none';
+        licensePlateInput.required = false;
+        licensePlateInput.value = '';
+    }
+}
+
+// Set minimum date for check-out based on check-in date
+document.getElementById('check_in').addEventListener('change', function() {
+    document.getElementById('check_out').min = this.value;
+    calculateTotal();
+});
+
+document.getElementById('check_out').addEventListener('change', calculateTotal);
+</script>
+
+<style>
+.dark-select {
+    background-color: #2c2c2c;
+    color: #ffffff;
+    border: 1px solid #444;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.dark-select:hover {
+    background-color: #3c3c3c;
+    border-color: #555;
+}
+
+.dark-select:focus {
+    outline: none;
+    border-color: #666;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.dark-input {
+    background-color: #2c2c2c;
+    color: #ffffff;
+    border: 1px solid #444;
+    padding: 8px 12px;
+    border-radius: 4px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.dark-input:focus {
+    outline: none;
+    border-color: #666;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.dark-input::placeholder {
+    color: #888;
+}
+
+.yes-no-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.radio-hidden {
+    display: none;
+}
+
+.yes-no-button {
+    flex: 1;
+    padding: 10px 20px;
+    text-align: center;
+    background-color: #2c2c2c;
+    color: #ffffff;
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.yes-no-button:hover {
+    background-color: #3c3c3c;
+    border-color: #555;
+}
+
+.radio-hidden:checked + .yes-no-button {
+    background-color: #4a4a4a;
+    border-color: #666;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+</style>
+{% endblock %} 
