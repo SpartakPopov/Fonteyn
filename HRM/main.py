@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from db import get_password, register_employee, all_employees, DB_NAME, edit_employee, delete_employee, get_pending_users,approve_pending_user, reject_pending_user
+from db import get_password, register_employee, all_employees, edit_employee, delete_employee, get_pending_users,approve_pending_user, reject_pending_user
 from passlib.hash import bcrypt
 from environment import SECRET_KEY
     
