@@ -5,11 +5,16 @@ import yaml
 from datetime import datetime
 import os
 from functools import wraps
+import requests
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fonteyn.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config['ERP_URL'] = "https://erpnext-fonteyn.duckdns.org"
+app.config['ERP_API_KEY'] = "aae4c683a84e8f8"
+app.config['ERP_API_SECRET'] = "196347af676879c"
 
 db.init_app(app)
 
@@ -44,6 +49,14 @@ def init_db():
 # Load accommodation types from YAML
 with open('accommodations.yaml', 'r') as file:
     ACCOMMODATIONS = yaml.safe_load(file)
+
+def erpnext_post(endpoint, data):
+    url = f"{app.config['ERP_URL']}/api/resource/{endpoint}"
+    headers = {
+        "Authorization": f"token {app.config['ERP_API_KEY']}:{app.config['ERP_API_SECRET']}",
+        "Content-Type": "application/json"
+    }
+    return requests.post(url, json=data, headers=headers)
 
 # Admin required decorator
 def admin_required(f):
@@ -172,6 +185,44 @@ def make_reservation():
         )
         db.session.add(reservation)
         db.session.commit()
+        
+        #The next block of code links to the ERPNext API to create a customer and a payment entry
+        
+        customer_data = {
+            "customer_name": User.query.get(session['user_id']).username,
+            "customer_type": "Individual",
+            "customer_group": "Individual",
+            "territory": "All Territories"
+        }
+        
+        payment_data = {
+            "payment_type": "Receive",
+            "party_type": "Customer",
+            "party": User.query.get(session['user_id']).username,
+            "paid_amount": accommodation['price'] * (check_out - check_in).days,
+            "received_amount": accommodation['price'] * (check_out - check_in).days,
+            "posting_date": datetime.now().strftime('%Y-%m-%d'),
+            "mode_of_payment": "Credit Card",
+            "reference_no": "BOOK" + str(reservation.id),
+            "reference_date": datetime.now().strftime('%Y-%m-%d'),
+            "target_exchange_rate": 1,
+            "paid_to": "Bank Account - FHP",
+            "paid_to_account_currency": "EUR"
+        }
+        
+        # Ignore error if customer already exists
+        cust_resp = erpnext_post("Customer", customer_data)
+        # Step 2: Create Payment Entry
+        pay_resp = erpnext_post("Payment Entry", payment_data)
+        try:
+            pay_json = pay_resp.json()
+        except Exception:
+            pay_json = pay_resp.text
+        if pay_resp.status_code in [200, 201]:
+            print({"success": True}, 201)
+        else:
+            print({"success": False, "error": pay_json}, pay_resp.status_code)
+        
         flash('Reservation created successfully')
         return redirect(url_for('dashboard'))
     
