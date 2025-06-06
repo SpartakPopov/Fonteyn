@@ -1,0 +1,17 @@
+
+$ curl -X POST http://localhost:5000/add_payment_entry \
+     -H "Content-Type: application/json" \
+     -d '{
+        "payment_type": "Receive",
+        "party_type": "Customer",
+        "party": "John Doe",
+        "paid_amount": 100,
+        "received_amount": 100,
+        "posting_date": "2024-06-06",
+        "mode_of_payment": "Credit Card",
+        "reference_no": "BOOK123",
+        "reference_date": "2024-06-06",
+        "target_exchange_rate": 1,
+        "paid_to": "Bank - FHP",
+        "paid_to_account_currency": "EUR" 
+        }'
