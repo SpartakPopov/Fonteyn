@@ -343,4 +343,4 @@ def admin_create_reservation():
 
 if __name__ == '__main__':
     init_db()  # Initialize database and create admin user
-    app.run(debug=True) 
+    app.run(host="0.0.0.0", port=5000, debug=True) 
