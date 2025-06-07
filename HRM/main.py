@@ -5,7 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from db import get_password, register_employee, all_employees, edit_employee, delete_employee, get_pending_users,approve_pending_user, reject_pending_user
 from passlib.hash import bcrypt
-from environment import SECRET_KEY
+from msal import ConfidentialClientApplication
+from environment import AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_AUTHORITY, AZURE_REDIRECT_URI, AZURE_SCOPE, SECRET_KEY
     
 templates = Jinja2Templates(directory="templates")
 
@@ -13,6 +14,15 @@ app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 # mounting the static folder
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+def _build_msal_app():
+    return ConfidentialClientApplication(
+        AZURE_CLIENT_ID,    
+        authority=AZURE_AUTHORITY,
+        client_credential=AZURE_CLIENT_SECRET
+    )
+
 # routes
 @app.get("/", response_class=HTMLResponse)
 async def home():
@@ -28,6 +38,40 @@ async def register_get(request: Request):
 async def login_get(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.get("/login/microsoft")
+async def login_microsoft():
+    msal_app = _build_msal_app()
+    auth_url = msal_app.get_authorization_request_url(
+        scopes=AZURE_SCOPE,
+        redirect_uri=AZURE_REDIRECT_URI
+    )
+    return RedirectResponse(auth_url)
+
+
+@app.get("/auth/callback")
+async def auth_callback(request: Request):
+    code = request.query_params.get("code")
+    if not code:
+        return HTMLResponse("Login failed: No code provided.", status_code=400)
+
+    msal_app = _build_msal_app()
+    result = msal_app.acquire_token_by_authorization_code(
+        code,
+        scopes=AZURE_SCOPE,
+        redirect_uri=AZURE_REDIRECT_URI
+    )
+
+    if "access_token" in result:
+        user_email = result.get("id_token_claims", {}).get("preferred_username") or result.get("account", {}).get("username")
+        user_name = result.get("id_token_claims", {}).get("name", "Microsoft User")
+
+        # Store email in session
+        request.session["username"] = user_email
+        return RedirectResponse(url="/dashboard", status_code=303)
+
+    return HTMLResponse(f"Login failed: {result.get('error_description')}", status_code=400)
+
+
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
@@ -35,7 +79,7 @@ async def dashboard(request: Request):
     print("Dashboard accessed by user:", username)
     if not username:
         print("Not in session, redirecting to login")
-        return RedirectResponse(url="/register", status_code=303)
+        return RedirectResponse(url="/login", status_code=303)
 
     employees = all_employees()
     pending_emps = []
