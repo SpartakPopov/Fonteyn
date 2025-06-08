@@ -4,6 +4,8 @@ stages:
 
 build_all:
   stage: build
+  tags:
+    - kubernetes
   image: docker:20.10
   services:
     - docker:dind
