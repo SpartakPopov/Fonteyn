@@ -2,117 +2,37 @@
 <html>
 <head>
   <link rel="stylesheet" href="/static/style.css">
-
+  <script src="/static/script.js"></script>
+  <title>Dashboard</title>
 </head>
 <body>
-       <!-- approved employees table -->
-    <table>
-        <thead>
-            <tr>
-                <th>Username</th>
-                <th>Full Name</th>
-                <th>Email</th>
-                <th>Position</th>
-                {% if username == "admin" %}
-                <th>Actions</th>
-                 {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-         
-            {% for emp in employees %}
-            <tr id="row-{{ emp[0] }}" data-username="{{ emp[0] }}">
-                <td>{{ emp[0] }}</td>
-                <td>
-                    <span class="display" id="names-{{ emp[0] }}">{{ emp[1] }}</span>
-                    <input
-                        type="text"
-                        class="edit-input"
-                        id="input-names-{{ emp[0] }}"
-                        value="{{ emp[1] }}"
-                        style="display: none;"
-                    >
-                </td>
-                <td>
-                    <span class="display" id="email-{{ emp[0] }}">{{ emp[2] }}</span>
-                    <input
-                        type="email"
-                        class="edit-input"
-                        id="input-email-{{ emp[0] }}"
-                        value="{{ emp[2] }}"
-                        style="display: none;"
-                    >
-                </td>
-                <td>
-                    <span class="display" id="position-{{ emp[0] }}">{{ emp[3] }}</span>
-                    <input
-                        type="text"
-                        class="edit-input"
-                        id="input-position-{{ emp[0] }}"
-                        value="{{ emp[3] }}"
-                        style="display: none;"
-                    >
-                </td>
-                <td>
-                    {% if username == "admin" %}
-                        {% if emp[4] == 0 %}
-                            <!-- button for pending users -->
-                            <button class="approve-btn">Approve</button>
-                            <button class="reject-btn">Reject</button>
-                        {% else %}
-                            <!-- buttons for employee actions -->
-                            <button class="edit-btn">Edit</button>
-                            <button
-                                class="save-btn"
-                                id="save-btn-{{ emp[0] }}"
-                                style="display: none;"
-                            >Save</button>
-                            <button
-                                class="cancel-btn"
-                                id="cancel-btn-{{ emp[0] }}"
-                                style="display: none;"
-                            >Cancel</button>
-                            <button class="delete-btn">Delete</button>
-                        {% endif %}
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-        <a href="/logout" class="logout-btn">Logout</a>
-
-        <!-- pending users table -->
-    {% if username == "admin" and pending_employees %}
-    <h2>Pending Users</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Username</th>
-                <th>Full Name</th>
-                <th>Email</th>
-                <th>Position</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for emp in pending_employees %}
-            <tr id="pending-row-{{ emp[0] }}" data-username="{{ emp[0] }}">
-                <td>{{ emp[0] }}</td>
-                <td>{{ emp[1] }}</td>
-                <td>{{ emp[2] }}</td>
-                <td>{{ emp[3] }}</td>
-                <td>
-                    <button class="approve-btn">Approve</button>
-                    <button class="reject-btn">Reject</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-
-    <script src="/static/script.js"></script>
+  <h2>Welcome, {{ username }}</h2>
+  <a href="/logout" class="logout-btn">Logout</a>
+  
+  {% if user_job_title == "HRMAdministrator" %}
+    <a href="/register" class="btn">Register New User</a>
+  {% endif %}
+  
+  <h3>All Employees</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Job Title</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for employee in employees %}
+      <tr>
+        <td>{{ employee[0] }}</td>
+        <td>{{ employee[1] }}</td>
+        <td>{{ employee[2] }}</td>
+        <td>{{ employee[3] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </body>
 </html>

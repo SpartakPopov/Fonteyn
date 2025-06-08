@@ -1,27 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <title>Sign In</title>
 </head>
 <body>
-    <h2>Employee Login</h2>
-    <form method="post" action="/login">
-        <label>Username:</label>
-        <input type="text" name="username" required><br>
-
-        <label>Password:</label>
-        <input type="password" name="password" required><br>
-
-        <button type="submit">Login</button>
-    </form>
-    <p>Don't have an account? <a href="/register">Submit your registration here</a>.</p>
-
-    <p>Or login using Microsoft:</p>
-<a href="/login/microsoft">Login with Microsoft</a>
-
-    {% if error %}
-    <p style="color:red">{{ error }}</p>
-    {% endif %}
+  <h2>Sign in to the Application</h2>
+  <a href="/login/microsoft" class="btn">Sign in with Microsoft</a>
 </body>
 </html>
