@@ -8,7 +8,7 @@ build_all:
   services:
     - docker:dind
   tags:
-    - kubernetes
+    - build
   before_script:
     - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
   script:
@@ -22,7 +22,7 @@ build_all:
   stage: deploy
   image: bitnami/kubectl:latest
   tags:
-    - kubernetes
+    - deploy
   before_script:
     - echo "$KUBECONFIG" | base64 -d > kubeconfig
     - export KUBECONFIG=$PWD/kubeconfig
