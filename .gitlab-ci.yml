@@ -28,21 +28,21 @@ build_all:
 
 deploy_booking:
   stage: deploy
-  values:
+  variables:
     APP_NAME: booking
   needs: ["build_all"]
   <<: *deploy_template
 
 deploy_hrm:
   stage: deploy
-  values:
+  variables:
     APP_NAME: hrm
   needs: ["build_all"]
   <<: *deploy_template 
 
 #deploy_backend:
 #  stage: deploy
-#  values:
+#  variables:
 #    APP_NAME: backend
 #  needs: ["build_all"]
 #  <<: *deploy_template
