@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from urllib.parse import urlencode
 from starlette.middleware.sessions import SessionMiddleware
 from db import get_password, register_employee, all_employees, edit_employee, delete_employee, get_pending_users,approve_pending_user, reject_pending_user
 from passlib.hash import bcrypt
@@ -154,7 +155,12 @@ async def login_post(
 @app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/login", status_code=303)
+    tenant = AZURE_AUTHORITY.split('/')[-1] 
+    post_logout_redirect_uri = "http://localhost:8000/login"  
+
+    params = urlencode({"post_logout_redirect_uri": post_logout_redirect_uri})
+    azure_logout_url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/logout?{params}"
+    return RedirectResponse(url=azure_logout_url)
 
 
 @app.post("/edit_employee/{username}")
