@@ -28,6 +28,8 @@ build_all:
 
 deploy_booking:
   stage: deploy
+  tags:
+    - kubernetes
   variables:
     APP_NAME: booking
   needs: ["build_all"]
@@ -35,6 +37,8 @@ deploy_booking:
 
 deploy_hrm:
   stage: deploy
+  tags:
+    - kubernetes
   variables:
     APP_NAME: hrm
   needs: ["build_all"]
