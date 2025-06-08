@@ -1,0 +1,21 @@
+
+services:
+  booking:
+    container_name: booking
+    build: 
+      context: ./test2
+    image: fonteyncr.azurecr.io/booking:latest
+
+  HRM:
+    container_name: hrm
+    build: 
+      context: ./hrm
+    image: fonteyncr.azurecr.io/hrm:latest
+
+  #backend:
+  #  container_name: backend
+  #  build: 
+  #    context: ./backend
+  #  image: fonteyncr.azurecr.io/backend:latest
+
+#docker-compose up --build -d
