@@ -4,22 +4,25 @@ stages:
 
 build_all:
   stage: build
-  tags:
-    - kubernetes
   image: docker:20.10
   services:
     - docker:dind
+  tags:
+    - kubernetes
   before_script:
     - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
   script:
     - docker-compose build
-    - docker tag fonteyncr.azurecr.io/app1 fonteyncr.azurecr.io/app1:$CI_COMMIT_SHORT_SHA
-    - docker tag fonteyncr.azurecr.io/app2 fonteyncr.azurecr.io/app2:$CI_COMMIT_SHORT_SHA
-    - docker push fonteyncr.azurecr.io/app1:$CI_COMMIT_SHORT_SHA
-    - docker push fonteyncr.azurecr.io/app2:$CI_COMMIT_SHORT_SHA
+    - docker tag fonteyncr.azurecr.io/booking fonteyncr.azurecr.io/booking:$CI_COMMIT_SHORT_SHA
+    - docker tag fonteyncr.azurecr.io/hrm fonteyncr.azurecr.io/hrm:$CI_COMMIT_SHORT_SHA
+    - docker push fonteyncr.azurecr.io/booking:$CI_COMMIT_SHORT_SHA
+    - docker push fonteyncr.azurecr.io/hrm:$CI_COMMIT_SHORT_SHA
 
 .deploy_template: &deploy_template
+  stage: deploy
   image: bitnami/kubectl:latest
+  tags:
+    - kubernetes
   before_script:
     - echo "$KUBECONFIG" | base64 -d > kubeconfig
     - export KUBECONFIG=$PWD/kubeconfig
@@ -29,18 +32,12 @@ build_all:
 
 
 deploy_booking:
-  stage: deploy
-  tags:
-    - kubernetes
   variables:
     APP_NAME: booking
   needs: ["build_all"]
   <<: *deploy_template
 
 deploy_hrm:
-  stage: deploy
-  tags:
-    - kubernetes
   variables:
     APP_NAME: hrm
   needs: ["build_all"]

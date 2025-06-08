@@ -23,6 +23,6 @@ spec:
                       - booking
     containers:
       - name: booking
-        image: fonteyncr.azurecr.io/booking:latest
+        image: fonteyncr.azurecr.io/booking:IMAGE_TAG
         ports:
           - containerPort: 80
