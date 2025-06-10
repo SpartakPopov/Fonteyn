@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from urllib.parse import urlencode
 from starlette.middleware.sessions import SessionMiddleware
 import logging
-from environment import AZURE_REDIRECT_URI, AZURE_SCOPE, SECRET_KEY, AZURE_AUTHORITY
+from environment import AZURE_REDIRECT_URI, AZURE_SCOPE, SECRET_KEY, AZURE_AUTHORITY, HRM_ADMIN_GROUP_ID
 from azure import (
     build_msal_app,
     get_user_profile,
@@ -14,9 +14,11 @@ from azure import (
     get_user_by_id,
     update_user,
     delete_user,
+    get_user_groups,
+    get_all_groups,
+    assign_user_to_groups,
 )
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,6 @@ templates = Jinja2Templates(directory="templates")
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
-# mounting the static folder
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
@@ -58,23 +59,28 @@ async def auth_callback(request: Request):
     )
 
     if "access_token" in result:
-        user_email = result.get("id_token_claims", {}).get("preferred_username")
-        user_name = result.get("id_token_claims", {}).get("name", "Microsoft User")
+        # Use id_token_claims for both email and name
+        id_token_claims = result.get("id_token_claims", {})
+        user_email = id_token_claims.get("preferred_username")
+        user_name = id_token_claims.get("name", "Microsoft User")
         access_token = result.get("access_token")
-
-        # Fetch user profile from Microsoft Graph
         profile = get_user_profile(access_token)
         logger.debug(f"User profile: {profile}")
         if not profile:
             return HTMLResponse("Failed to fetch user profile.", status_code=400)
 
-        # Store user info and access token in session
+        user_id = profile.get("id")
+        groups = get_user_groups(access_token, user_id)
+        if groups is None:
+            return HTMLResponse("Failed to fetch user groups.", status_code=400)
+
         request.session["user"] = {
             "email": user_email,
             "name": profile.get("displayName", user_name),
             "jobTitle": profile.get("jobTitle", "N/A"),
-            "id": profile.get("id"),
-            "access_token": access_token
+            "id": user_id,
+            "access_token": access_token,
+            "groups": groups
         }
         logger.debug(f"Session user data: {request.session['user']}")
         return RedirectResponse(url="/dashboard", status_code=303)
@@ -87,37 +93,62 @@ async def register_get(request: Request):
     logger.debug(f"Register GET - Session user: {user}")
     if not user:
         return RedirectResponse(url="/login/microsoft", status_code=303)
-    if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
-        raise HTTPException(status_code=403, detail="Only HRMAdministrators can access this page.")
-    return templates.TemplateResponse("register.html", {"request": request, "error": None})
+    if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
+        raise HTTPException(status_code=403, detail="Only HRMadministrator members can access this page.")
+
+    groups = get_all_groups(user["access_token"])
+    if groups is None:
+        return HTMLResponse("Failed to fetch groups.", status_code=400)
+
+    success_message = request.session.pop("success_message", None)
+    return templates.TemplateResponse("register.html", {
+        "request": request,
+        "error": None,
+        "groups": groups,
+        "success_message": success_message
+    })
 
 @app.post("/register", response_class=HTMLResponse)
 async def register_post(
     request: Request,
     display_name: str = Form(...),
     email: str = Form(...),
-    job_title: str = Form(...),
     password: str = Form(...),
-    is_admin: bool = Form(False)
+    group_ids: list[str] = Form(None)
 ):
     user = request.session.get("user")
     logger.debug(f"Register POST - Session user: {user}")
     if not user:
         return RedirectResponse(url="/login/microsoft", status_code=303)
-    if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
-        raise HTTPException(status_code=403, detail="Only HRMAdministrators can register users.")
+    if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
+        raise HTTPException(status_code=403, detail="Only HRMadministrator members can register users.")
     
-    # Create user in Entra ID
-    result = create_user(user["access_token"], display_name, email, job_title, password, is_admin)
+    result = create_user(user["access_token"], display_name, email, "N/A", password)
     if isinstance(result, tuple):
         status_code, error_response = result
         error_message = error_response.get("error", {}).get("message", "Failed to register user in Entra ID.")
         logger.error(f"Registration error: {status_code} - {error_message} - Full response: {error_response}")
+        groups = get_all_groups(user["access_token"]) or []
         return templates.TemplateResponse(
             "register.html",
-            {"request": request, "error": error_message},
+            {"request": request, "error": f"User creation failed: {error_message}", "groups": groups},
             status_code=400
         )
+
+    new_user = result
+    if group_ids:
+        group_result = assign_user_to_groups(user["access_token"], new_user["id"], group_ids)
+        if isinstance(group_result, tuple):
+            status_code, error_response = group_result
+            error_message = error_response.get("error", {}).get("message", "Failed to assign user to groups.")
+            logger.error(f"Group assignment error: {status_code} - {error_message}")
+            request.session["success_message"] = f"User {new_user['displayName']} created successfully, but group assignment failed."
+            groups = get_all_groups(user["access_token"]) or []
+            return templates.TemplateResponse(
+                "register.html",
+                {"request": request, "error": error_message, "groups": groups, "success_message": request.session["success_message"]},
+                status_code=400
+            )
 
     return RedirectResponse(url="/dashboard", status_code=303)
 
@@ -127,10 +158,9 @@ async def edit_user_get(request: Request, user_id: str):
     logger.debug(f"Edit User GET - Session user: {user}")
     if not user:
         return RedirectResponse(url="/login/microsoft", status_code=303)
-    if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
-        raise HTTPException(status_code=403, detail="Only HRMAdministrators can edit users.")
+    if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
+        raise HTTPException(status_code=403, detail="Only HRMadministrator members can edit users.")
 
-    # Fetch user details from Microsoft Graph
     user_data = get_user_by_id(user["access_token"], user_id)
     if not user_data:
         return HTMLResponse("Failed to fetch user details.", status_code=400)
@@ -154,10 +184,9 @@ async def edit_user_post(
     logger.debug(f"Edit User POST - Session user: {user}")
     if not user:
         return RedirectResponse(url="/login/microsoft", status_code=303)
-    if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
-        raise HTTPException(status_code=403, detail="Only HRMAdministrators can edit users.")
+    if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
+        raise HTTPException(status_code=403, detail="Only HRMadministrator members can edit users.")
     
-    # Update user in Entra ID
     result = update_user(user["access_token"], user_id, display_name, email, job_title)
     if isinstance(result, tuple):
         status_code, error_response = result
@@ -181,27 +210,28 @@ async def edit_user_post(
 
     return RedirectResponse(url="/dashboard", status_code=303)
 
-@app.post("/delete_user/{user_id}", response_class=HTMLResponse)
+@app.post("/delete_user/{user_id}", response_class=RedirectResponse)
 async def delete_user_post(request: Request, user_id: str):
     user = request.session.get("user")
     logger.debug(f"Delete User POST - Session user: {user}")
     if not user:
         return RedirectResponse(url="/login/microsoft", status_code=303)
-    if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
-        raise HTTPException(status_code=403, detail="Only HRMAdministrators can delete users.")
+    if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
+        raise HTTPException(status_code=403, detail="Only HRMadministrator members can delete users.")
     
-    # Prevent self-deletion
     if user_id == user["id"]:
-        return HTMLResponse("Cannot delete your own account.", status_code=400)
+        request.session["error_message"] = "Cannot delete your own account."
+        return RedirectResponse(url="/dashboard", status_code=303)
 
-    # Delete user in Entra ID
     result = delete_user(user["access_token"], user_id)
     if isinstance(result, tuple):
         status_code, error_response = result
         error_message = error_response.get("error", {}).get("message", "Failed to delete user in Entra ID.")
         logger.error(f"Delete error: {status_code} - {error_message} - Full response: {error_response}")
-        return HTMLResponse(f"Failed to delete user: {error_message}", status_code=400)
+        request.session["error_message"] = f"Failed to delete user: {error_message}"
+        return RedirectResponse(url="/dashboard", status_code=303)
 
+    request.session["success_message"] = "User deleted successfully."
     return RedirectResponse(url="/dashboard", status_code=303)
 
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -210,22 +240,29 @@ async def dashboard(request: Request):
     if not user:
         return RedirectResponse(url="/login/microsoft", status_code=303)
 
-    # Fetch all users from Microsoft Graph
     users = get_all_users(user["access_token"])
     if not users:
         return HTMLResponse("Failed to fetch users from Entra ID.", status_code=400)
 
-    # Format users to match the expected employees tuple: (id, name, email, jobTitle)
     employees = [
-        (user["id"], user.get("displayName", "N/A"), user.get("userPrincipalName", "N/A"), user.get("jobTitle", "N/A"))
+        (
+            user["id"],
+            user.get("displayName", "N/A"),
+            user.get("userPrincipalName", "N/A"),
+            ", ".join(group["displayName"] for group in user.get("groups", [])) or "None"
+        )
         for user in users
     ]
 
+    success_message = request.session.pop("success_message", None)
+    error_message = request.session.pop("error_message", None)
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "username": user["email"],
         "employees": employees,
-        "user_job_title": user["jobTitle"]
+        "is_hrm_admin": any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])),
+        "success_message": success_message,
+        "error_message": error_message
     })
 
 @app.get("/logout")

@@ -1,50 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/script.js"></script>
-  <title>Dashboard</title>
+    <title>Dashboard</title>
 </head>
 <body>
-  <h2>Welcome, {{ username }}</h2>
-  <a href="/logout" class="logout-btn">Logout</a>
-  
-  {% if user_job_title == "HRMAdministrator" %}
-    <a href="/register" class="logout-btn">Register New User</a>
-  {% endif %}
-  
-  <h3>All Employees</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Job Title</th>
-        {% if user_job_title == "HRMAdministrator" %}
-          <th>Actions</th>
-        {% endif %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for employee in employees %}
-      <tr>
-        <td>{{ employee[0] }}</td>
-        <td>{{ employee[1] }}</td>
-        <td>{{ employee[2] }}</td>
-        <td>{{ employee[3] }}</td>
-        {% if user_job_title == "HRMAdministrator" %}
-          <td>
-          <a href="/edit_user/{{ employee[0] }}" class="btn">Edit</a>
+    <h2>Welcome, {{ username }}</h2>
 
-          <form action="/delete_user/{{ employee[0] }}" method="post" class="inline-form">
-            <button type="submit" class="btn" onclick="return confirm('Are you sure you want to delete this user?');">Delete</button>
-          </form>
-          </td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+         <br>
+    {% if is_hrm_admin %}
+        <a href="/register">Register New User</a><br><br>
+    {% endif %}
+    <a href="/logout">Logout</a>
+    <h3>Employee List</h3>
+    <table border="1">
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Groups</th>
+            {% if is_hrm_admin %}
+                <th>Actions</th>
+            {% endif %}
+        </tr>
+        {% for employee in employees %}
+        <tr>
+            <td>{{ employee[1] }}</td>
+            <td>{{ employee[2] }}</td>
+            <td>{{ employee[3] }}</td>
+            {% if is_hrm_admin %}
+            <td>
+                <a href="/edit_user/{{ employee[0] }}">Edit</a>
+                <form action="/delete_user/{{ employee[0] }}" method="post" style="display:inline;">
+                    <input type="submit" value="Delete" onclick="return confirm('Are you sure you want to delete this user?');">
+                </form>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+
 </body>
 </html>
