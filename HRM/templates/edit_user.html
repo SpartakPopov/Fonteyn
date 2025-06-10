@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/static/style.css">
+  <title>Edit User</title>
+</head>
+<body>
+  <h2>Edit User</h2>
+  {% if error %}
+    <p style="color: red;">{{ error }}</p>
+  {% endif %}
+  <form method="post" action="/edit_user/{{ user_id }}">
+    <label for="display_name">Full Name:</label><br>
+    <input type="text" id="display_name" name="display_name" value="{{ user_data.displayName }}" required><br><br>
+    
+    <label for="email">Email (User Principal Name):</label><br>
+    <input type="email" id="email" name="email" value="{{ user_data.userPrincipalName }}" required><br><br>
+    
+    <label for="job_title">Job Title:</label><br>
+    <input type="text" id="job_title" name="job_title" value="{{ user_data.jobTitle }}" required><br><br>
+    
+    <input type="submit" value="Update User">
+  </form>
+  <br>
+  <a href="/dashboard">Back to Dashboard</a>
+</body>
+</html>

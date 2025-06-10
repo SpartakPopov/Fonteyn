@@ -1,220 +1,154 @@
-/* General body and font */
-/* ChatGPT generated CSS */
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body Styling */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
-    color: #333;
-    margin: 20px;
-    padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f4f6f8;
+  color: #333;
+  padding: 20px;
 }
 
 /* Headings */
-h1, h2 {
-    color: #2c3e50;
-    margin-bottom: 15px;
+h2, h3 {
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+/* Buttons */
+.btn, .logout-btn, input[type="submit"], .inline-form button.btn {
+  background-color: #3498db;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-right: 5px;
+}
+
+.btn:hover, .logout-btn:hover, input[type="submit"]:hover, .inline-form button.btn:hover {
+  background-color: #2980b9;
+}
+
+/* Inline Form for Delete Button */
+.inline-form {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+/* Links */
+a {
+  text-decoration: none;
+  color: #3498db;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 /* Tables */
 table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    background: white;
-    border-radius: 6px;
-    overflow: hidden;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-thead tr {
-    background-color: #34495e;
-    color: white;
-    text-align: left;
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
 }
 
-thead th, tbody td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #ddd;
+thead {
+  background-color: #ecf0f1;
+  font-weight: bold;
 }
 
-tbody tr:hover {
-    background-color: #f1f1f1;
-}
-
-/* Form elements */
+/* Forms */
 form {
-    background: white;
-    padding: 20px;
-    border-radius: 6px;
-    max-width: 400px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
 }
 
 label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
 }
 
 input[type="text"],
 input[type="email"],
 input[type="password"] {
-    width: 100%;
-    padding: 8px 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 14px;
-    transition: border-color 0.3s ease;
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="password"]:focus {
-    border-color: #3498db;
-    outline: none;
+input[type="submit"] {
+  width: auto;
 }
 
-/* Buttons */
-button {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.3s ease;
+/* Error Messages */
+p[style*="color: red"] {
+  font-weight: bold;
+  margin-bottom: 15px;
 }
 
-button:hover {
-    background-color: #2980b9;
-}
-
-button:disabled {
-    background-color: #bdc3c7;
-    cursor: not-allowed;
-}
-
-/* Action buttons with different colors */
-.approve-btn {
-    background-color: #27ae60;
-}
-
-.approve-btn:hover {
-    background-color: #1e8449;
-}
-
-.reject-btn {
-    background-color: #e74c3c;
-}
-
-.reject-btn:hover {
-    background-color: #c0392b;
-}
-
-.edit-btn {
-    background-color: #f39c12;
-}
-
-.edit-btn:hover {
-    background-color: #d68910;
-}
-
-.save-btn {
-    background-color: #2980b9;
-}
-
-.save-btn:hover {
-    background-color: #1c5980;
-}
-
-.cancel-btn {
-    background-color: #7f8c8d;
-}
-
-.cancel-btn:hover {
-    background-color: #636e72;
-}
-
-.delete-btn {
-    background-color: #c0392b;
-}
-
-.delete-btn:hover {
-    background-color: #922b21;
-}
-
-/* Logout button */
+/* Layout Tweaks */
 .logout-btn {
-    display: inline-block;
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #e67e22;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: 600;
-    transition: background-color 0.3s ease;
+  float: right;
+  background-color: #e74c3c;
 }
 
 .logout-btn:hover {
-    background-color: #d35400;
+  background-color: #c0392b;
 }
 
-/* Inline editing input styling */
-.edit-input {
-    padding: 6px 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+a[href="/dashboard"] {
+  display: inline-block;
+  margin-top: 20px;
 }
 
-/* Links */
-a {
-    color: #3498db;
-    text-decoration: none;
-}
+/* Responsive Table on Small Screens */
+@media screen and (max-width: 600px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
 
-a:hover {
-    text-decoration: underline;
-}
+  tr {
+    margin-bottom: 15px;
+  }
 
-/* Error messages */
-p[style*="color:red"] {
-    color: #e74c3c;
-    font-weight: 600;
-}
+  th {
+    background-color: #bdc3c7;
+  }
 
-/* Responsive for smaller devices */
-@media (max-width: 600px) {
-    table, thead, tbody, th, td, tr {
-        display: block;
-    }
-    thead tr {
-        display: none;
-    }
-    tbody tr {
-        margin-bottom: 15px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 10px;
-        background: white;
-    }
-    tbody td {
-        border: none;
-        padding: 10px 0;
-        position: relative;
-        padding-left: 50%;
-        white-space: normal;
-        text-align: left;
-    }
-    tbody td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 15px;
-        top: 10px;
-        font-weight: 600;
-        white-space: nowrap;
-    }
+  td {
+    border: none;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    padding-left: 50%;
+  }
+
+  td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 15px;
+    font-weight: bold;
+  }
 }

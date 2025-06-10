@@ -11,10 +11,13 @@ from azure import (
     get_user_profile,
     get_all_users,
     create_user,
+    get_user_by_id,
+    update_user,
+    delete_user,
 )
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 templates = Jinja2Templates(directory="templates")
@@ -61,7 +64,7 @@ async def auth_callback(request: Request):
 
         # Fetch user profile from Microsoft Graph
         profile = get_user_profile(access_token)
-        logger.debug(f"User profile: {profile}")  
+        logger.debug(f"User profile: {profile}")
         if not profile:
             return HTMLResponse("Failed to fetch user profile.", status_code=400)
 
@@ -73,7 +76,7 @@ async def auth_callback(request: Request):
             "id": profile.get("id"),
             "access_token": access_token
         }
-        logger.debug(f"Session user data: {request.session['user']}")  # Log session data
+        logger.debug(f"Session user data: {request.session['user']}")
         return RedirectResponse(url="/dashboard", status_code=303)
 
     return HTMLResponse(f"Login failed: {result.get('error_description')}", status_code=400)
@@ -81,7 +84,7 @@ async def auth_callback(request: Request):
 @app.get("/register", response_class=HTMLResponse)
 async def register_get(request: Request):
     user = request.session.get("user")
-    logger.debug(f"Register GET - Session user: {user}")  # Log session data
+    logger.debug(f"Register GET - Session user: {user}")
     if not user:
         return RedirectResponse(url="/login/microsoft", status_code=303)
     if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
@@ -98,7 +101,7 @@ async def register_post(
     is_admin: bool = Form(False)
 ):
     user = request.session.get("user")
-    logger.debug(f"Register POST - Session user: {user}")  # Log session data
+    logger.debug(f"Register POST - Session user: {user}")
     if not user:
         return RedirectResponse(url="/login/microsoft", status_code=303)
     if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
@@ -115,6 +118,89 @@ async def register_post(
             {"request": request, "error": error_message},
             status_code=400
         )
+
+    return RedirectResponse(url="/dashboard", status_code=303)
+
+@app.get("/edit_user/{user_id}", response_class=HTMLResponse)
+async def edit_user_get(request: Request, user_id: str):
+    user = request.session.get("user")
+    logger.debug(f"Edit User GET - Session user: {user}")
+    if not user:
+        return RedirectResponse(url="/login/microsoft", status_code=303)
+    if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
+        raise HTTPException(status_code=403, detail="Only HRMAdministrators can edit users.")
+
+    # Fetch user details from Microsoft Graph
+    user_data = get_user_by_id(user["access_token"], user_id)
+    if not user_data:
+        return HTMLResponse("Failed to fetch user details.", status_code=400)
+
+    return templates.TemplateResponse("edit_user.html", {
+        "request": request,
+        "user_id": user_id,
+        "user_data": user_data,
+        "error": None
+    })
+
+@app.post("/edit_user/{user_id}", response_class=HTMLResponse)
+async def edit_user_post(
+    request: Request,
+    user_id: str,
+    display_name: str = Form(...),
+    email: str = Form(...),
+    job_title: str = Form(...)
+):
+    user = request.session.get("user")
+    logger.debug(f"Edit User POST - Session user: {user}")
+    if not user:
+        return RedirectResponse(url="/login/microsoft", status_code=303)
+    if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
+        raise HTTPException(status_code=403, detail="Only HRMAdministrators can edit users.")
+    
+    # Update user in Entra ID
+    result = update_user(user["access_token"], user_id, display_name, email, job_title)
+    if isinstance(result, tuple):
+        status_code, error_response = result
+        error_message = error_response.get("error", {}).get("message", "Failed to update user in Entra ID.")
+        logger.error(f"Update error: {status_code} - {error_message} - Full response: {error_response}")
+        user_data = get_user_by_id(user["access_token"], user_id) or {
+            "displayName": display_name,
+            "userPrincipalName": email,
+            "jobTitle": job_title
+        }
+        return templates.TemplateResponse(
+            "edit_user.html",
+            {
+                "request": request,
+                "user_id": user_id,
+                "user_data": user_data,
+                "error": error_message
+            },
+            status_code=400
+        )
+
+    return RedirectResponse(url="/dashboard", status_code=303)
+
+@app.post("/delete_user/{user_id}", response_class=HTMLResponse)
+async def delete_user_post(request: Request, user_id: str):
+    user = request.session.get("user")
+    logger.debug(f"Delete User POST - Session user: {user}")
+    if not user:
+        return RedirectResponse(url="/login/microsoft", status_code=303)
+    if user.get("jobTitle", "").strip().lower() != "hrmadministrator":
+        raise HTTPException(status_code=403, detail="Only HRMAdministrators can delete users.")
+    
+    # Prevent self-deletion
+    if user_id == user["id"]:
+        return HTMLResponse("Cannot delete your own account.", status_code=400)
+
+    # Delete user in Entra ID
+    result = delete_user(user["access_token"], user_id)
+    if isinstance(result, tuple):
+        status_code, error_response = result
+        error_message = error_response.get("error", {}).get("message", "Failed to delete user in Entra ID.")
+        logger.error(f"Delete error: {status_code} - {error_message} - Full response: {error_response}")
+        return HTMLResponse(f"Failed to delete user: {error_message}", status_code=400)
 
     return RedirectResponse(url="/dashboard", status_code=303)
 
@@ -145,9 +231,8 @@ async def dashboard(request: Request):
 @app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
-    tenant = AZURE_AUTHORITY.split('/')[-1] 
-    post_logout_redirect_uri = "http://localhost:8000/login"  
-
+    tenant = AZURE_AUTHORITY.split('/')[-1]
+    post_logout_redirect_uri = "http://localhost:8000/login"
     params = urlencode({"post_logout_redirect_uri": post_logout_redirect_uri})
     azure_logout_url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/logout?{params}"
     return RedirectResponse(url=azure_logout_url)
