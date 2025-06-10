@@ -2,9 +2,12 @@ stages:
   - build
   - deploy
 
+variables:
+  DOCKER_TLS_CERTDIR: ''
+
 build_all:
   stage: build
-  image: docker:20.10
+  image: docker:latest
   services:
     - docker:dind
   tags:
