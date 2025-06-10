@@ -12,7 +12,7 @@ build_all:
   before_script:
     - docker login -u "fonteyncr" -p "Ywfz5AFidIRdwlYwl+qOs2CLxtp8Aq9QSa8KoBn5s7+ACRAJovcP" fonteyncr.azurecr.io
   script:
-    - docker-compose build
+    - docker-compose up --build -d
     - docker tag fonteyncr.azurecr.io/booking fonteyncr.azurecr.io/booking:$CI_COMMIT_SHORT_SHA
     - docker tag fonteyncr.azurecr.io/hrm fonteyncr.azurecr.io/hrm:$CI_COMMIT_SHORT_SHA
     - docker push fonteyncr.azurecr.io/booking:$CI_COMMIT_SHORT_SHA
