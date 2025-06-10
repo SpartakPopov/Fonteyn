@@ -10,7 +10,7 @@ build_all:
   tags:
     - build
   before_script:
-    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
+    - docker login -u "fonteyncr" -p "Ywfz5AFidIRdwlYwl+qOs2CLxtp8Aq9QSa8KoBn5s7+ACRAJovcP" fonteyncr.azurecr.io
   script:
     - docker-compose build
     - docker tag fonteyncr.azurecr.io/booking fonteyncr.azurecr.io/booking:$CI_COMMIT_SHORT_SHA
