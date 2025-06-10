@@ -17,6 +17,7 @@ from azure import (
     get_user_groups,
     get_all_groups,
     assign_user_to_groups,
+    sync_user_groups
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -165,10 +166,19 @@ async def edit_user_get(request: Request, user_id: str):
     if not user_data:
         return HTMLResponse("Failed to fetch user details.", status_code=400)
 
+    groups = get_all_groups(user["access_token"])
+    if groups is None:
+        return HTMLResponse("Failed to fetch groups.", status_code=400)
+
+    user_groups = get_user_groups(user["access_token"], user_id) or []
+    user_group_ids = [group["id"] for group in user_groups]
+
     return templates.TemplateResponse("edit_user.html", {
         "request": request,
         "user_id": user_id,
         "user_data": user_data,
+        "groups": groups,
+        "user_group_ids": user_group_ids,
         "error": None
     })
 
@@ -178,7 +188,7 @@ async def edit_user_post(
     user_id: str,
     display_name: str = Form(...),
     email: str = Form(...),
-    job_title: str = Form(...)
+    group_ids: list[str] = Form(default=[])
 ):
     user = request.session.get("user")
     logger.debug(f"Edit User POST - Session user: {user}")
@@ -186,29 +196,81 @@ async def edit_user_post(
         return RedirectResponse(url="/login/microsoft", status_code=303)
     if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
         raise HTTPException(status_code=403, detail="Only HRMadministrator members can edit users.")
-    
-    result = update_user(user["access_token"], user_id, display_name, email, job_title)
+
+    result = update_user(user["access_token"], user_id, display_name, email)
     if isinstance(result, tuple):
         status_code, error_response = result
         error_message = error_response.get("error", {}).get("message", "Failed to update user in Entra ID.")
         logger.error(f"Update error: {status_code} - {error_message} - Full response: {error_response}")
         user_data = get_user_by_id(user["access_token"], user_id) or {
             "displayName": display_name,
-            "userPrincipalName": email,
-            "jobTitle": job_title
+            "userPrincipalName": email
         }
+        groups = get_all_groups(user["access_token"]) or []
+        user_groups = get_user_groups(user["access_token"], user_id) or []
+        user_group_ids = [group["id"] for group in user_groups]
         return templates.TemplateResponse(
             "edit_user.html",
             {
                 "request": request,
                 "user_id": user_id,
                 "user_data": user_data,
+                "groups": groups,
+                "user_group_ids": user_group_ids,
+                "error": error_message
+            },
+            status_code=400
+        )
+
+    group_result = sync_user_groups(user["access_token"], user_id, group_ids)
+    if isinstance(group_result, tuple):
+        status_code, error_response = group_result
+        error_message = error_response.get("error", {}).get("message", "Failed to sync user groups.")
+        logger.error(f"Group sync error: {status_code} - {error_message}")
+        user_data = get_user_by_id(user["access_token"], user_id)
+        groups = get_all_groups(user["access_token"]) or []
+        user_groups = get_user_groups(user["access_token"], user_id) or []
+        user_group_ids = [group["id"] for group in user_groups]
+        return templates.TemplateResponse(
+            "edit_user.html",
+            {
+                "request": request,
+                "user_id": user_id,
+                "user_data": user_data,
+                "groups": groups,
+                "user_group_ids": user_group_ids,
                 "error": error_message
             },
             status_code=400
         )
 
     return RedirectResponse(url="/dashboard", status_code=303)
+        
+    if group_ids:
+        group_result = assign_user_to_groups(user["access_token"], user_id, group_ids)
+        if isinstance(group_result, tuple):
+            status_code, error_response = group_result
+            error_message = error_response.get("error", {}).get("message", "Failed to assign user to groups.")
+            logger.error(f"Group assignment error: {status_code} - {error_message}")
+            user_data = get_user_by_id(user["access_token"], user_id)
+            groups = get_all_groups(user["access_token"]) or []
+            user_groups = get_user_groups(user["access_token"], user_id) or []
+            user_group_ids = [group["id"] for group in user_groups]
+            return templates.TemplateResponse(
+                "edit_user.html",
+                {
+                    "request": request,
+                    "user_id": user_id,
+                    "user_data": user_data,
+                    "groups": groups,
+                    "user_group_ids": user_group_ids,
+                    "error": error_message
+                },
+                status_code=400
+            )
+
+    return RedirectResponse(url="/dashboard", status_code=303)
+
 
 @app.post("/delete_user/{user_id}", response_class=RedirectResponse)
 async def delete_user_post(request: Request, user_id: str):

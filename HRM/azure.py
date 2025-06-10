@@ -142,20 +142,79 @@ def create_user(access_token: str, display_name: str, email: str, job_title: str
     logger.error(f"Failed to create user: {response.status_code}, {response.text}")
     return response.status_code, response.json()
 
-def update_user(access_token: str, user_id: str, display_name: str, email: str, job_title: str):
+def update_user(access_token: str, user_id: str, display_name: str, email: str):
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
     user_data = {
         "displayName": display_name,
-        "userPrincipalName": email,
-        "jobTitle": job_title
+        "userPrincipalName": email
     }
     logger.debug(f"Updating user {user_id} with data: {user_data}")
     response = requests.patch(f"https://graph.microsoft.com/v1.0/users/{user_id}", headers=headers, json=user_data)
     if response.status_code == 204:
         logger.info(f"User {user_id} updated successfully")
         return True
+    elif response.status_code == 403:
+        logger.warning(f"Delegated token failed for user update {user_id}, attempting with app token")
+        app_token = get_app_access_token()
+        if not app_token:
+            logger.error("Failed to acquire app token")
+            return 403, {"error": {"message": "Failed to acquire app token"}}
+        headers = {"Authorization": f"Bearer {app_token}", "Content-Type": "application/json"}
+        response = requests.patch(f"https://graph.microsoft.com/v1.0/users/{user_id}", headers=headers, json=user_data)
+        if response.status_code == 204:
+            logger.info(f"User {user_id} updated successfully with app token")
+            return True
     logger.error(f"Failed to update user {user_id}: {response.status_code}, {response.text}")
     return response.status_code, response.json()
+
+def sync_user_groups(access_token: str, user_id: str, desired_group_ids: list):
+    current_groups = get_user_groups(access_token, user_id) or []
+    current_group_ids = [group["id"] for group in current_groups]
+    
+    groups_to_add = [gid for gid in desired_group_ids if gid not in current_group_ids]
+    groups_to_remove = [gid for gid in current_group_ids if gid not in desired_group_ids]
+    
+    if groups_to_add:
+        add_result = assign_user_to_groups(access_token, user_id, groups_to_add)
+        if isinstance(add_result, tuple):
+            return add_result
+    
+    if groups_to_remove:
+        remove_result = remove_user_from_groups(access_token, user_id, groups_to_remove)
+        if isinstance(remove_result, tuple):
+            return remove_result
+    
+    logger.info(f"User {user_id} groups synced: added {groups_to_add}, removed {groups_to_remove}")
+    return True
+
+def remove_user_from_groups(access_token: str, user_id: str, group_ids: list):
+    headers = {"Authorization": f"Bearer {access_token}"}
+    for group_id in group_ids:
+        logger.debug(f"Removing user {user_id} from group {group_id}")
+        response = requests.delete(
+            f"https://graph.microsoft.com/v1.0/groups/{group_id}/members/{user_id}/$ref",
+            headers=headers
+        )
+        if response.status_code == 204:
+            logger.info(f"User {user_id} removed from group {group_id}")
+            continue
+        elif response.status_code == 403:
+            logger.warning(f"Delegated token failed for group removal {group_id}, attempting with app token")
+            app_token = get_app_access_token()
+            if not app_token:
+                logger.error("Failed to acquire app token")
+                return 403, {"error": {"message": "Failed to acquire app token"}}
+            headers = {"Authorization": f"Bearer {app_token}"}
+            response = requests.delete(
+                f"https://graph.microsoft.com/v1.0/groups/{group_id}/members/{user_id}/$ref",
+                headers=headers
+            )
+            if response.status_code == 204:
+                logger.info(f"User {user_id} removed from group {group_id} with app token")
+                continue
+        logger.error(f"Failed to remove user {user_id} from group {group_id}: {response.status_code}, {response.text}")
+        return response.status_code, response.json()
+    return True
 
 def delete_user(access_token: str, user_id: str):
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}

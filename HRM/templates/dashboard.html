@@ -2,15 +2,16 @@
 <html>
 <head>
     <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <h2>Welcome, {{ username }}</h2>
 
          <br>
     {% if is_hrm_admin %}
-        <a href="/register">Register New User</a><br><br>
+        <a href="/register" class="btn">Register New User</a><br><br>
     {% endif %}
-    <a href="/logout">Logout</a>
+    <a href="/logout" class="btn">Logout</a>
     <h3>Employee List</h3>
     <table border="1">
         <tr>
