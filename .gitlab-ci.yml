@@ -38,13 +38,13 @@ build_all:
 
 deploy_booking:
   variables:
-    APP_NAME: booking
+    APP_NAME: test2
   needs: ["build_all"]
   <<: *deploy_template
 
 deploy_hrm:
   variables:
-    APP_NAME: hrm
+    APP_NAME: HRM
   needs: ["build_all"]
   <<: *deploy_template 
 
