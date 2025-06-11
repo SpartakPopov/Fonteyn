@@ -32,7 +32,7 @@ build_all:
     - echo "$KUBECONFIG" | base64 -d > kubeconfig
     - export KUBECONFIG=$PWD/kubeconfig
   script:
-    - sed "s|IMAGE_TAG|$CI_COMMIT_SHORT_SHA|g" ./app/$APP_NAME/k8s/deployment.yaml | kubectl apply -f -
+    - sed "s|IMAGE_TAG|$CI_COMMIT_SHORT_SHA|g" ./$APP_NAME/app/k8s/deployment.yaml | kubectl apply -f -
     - kubectl apply -f ./app/$APP_NAME/k8s/service.yaml
 
 
