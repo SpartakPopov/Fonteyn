@@ -21,8 +21,8 @@ spec:
                     operator: In
                     values:
                       - booking
-    containers:
-      - name: booking
-        image: fonteyncr.azurecr.io/booking:IMAGE_TAG
-        ports:
-          - containerPort: 80
+      containers:
+        - name: booking
+          image: fonteyncr.azurecr.io/booking:IMAGE_TAG
+          ports:
+            - containerPort: 80

@@ -21,8 +21,8 @@ spec:
                     operator: In
                     values:
                       - hrm
-    containers:
-      - name: hrm
-        image: fonteyncr.azurecr.io/hrm:IMAGE_TAG
-        ports:
-          - containerPort: 80
+      containers:
+        - name: hrm
+          image: fonteyncr.azurecr.io/hrm:IMAGE_TAG
+          ports:
+            - containerPort: 80
