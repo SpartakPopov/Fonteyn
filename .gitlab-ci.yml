@@ -29,19 +29,15 @@ build_all:
   tags:
     - deploy
   before_script:
-  - mkdir -p /var/lib/apt/lists/partial
-  
-  # 2) update & install curl + unzip
-  - apt-get update && apt-get install -y curl unzip
+  - az login --service-principal \
+      --username "$AZ_CLIENT_ID" \
+      --password "$AZ_CLIENT_SECRET" \
+      --tenant "$AZ_TENANT_ID"
+  - az aks get-credentials \
+      --resource-group "$AKS_RG" \
+      --name "$AKS_CLUSTER" \
+      --file kubeconfig
 
-  # 3) download & install kubelogin
-  - curl -sSL -o kubelogin.zip \
-      https://github.com/Azure/kubelogin/releases/latest/download/kubelogin-linux-amd64.zip
-  - unzip kubelogin.zip -d /usr/local/bin
-  - chmod +x /usr/local/bin/kubelogin
-  - rm kubelogin.zip
-    
-    - echo "$KUBECONFIG" | base64 -d > kubeconfig
     - export KUBECONFIG=$PWD/kubeconfig
   script:
     - sed "s|IMAGE_TAG|$CI_COMMIT_SHORT_SHA|g" ./$APP_NAME/k8s/deployment.yml | kubectl apply -f -
