@@ -31,10 +31,7 @@ build_all:
     - deploy
   before_script:
   - az login --service-principal -u "$AZ_CLIENT_ID" -p "$AZ_CLIENT_SECRET" --tenant "$AZ_TENANT_ID"
-  - az aks get-credentials \
-      --resource-group "$AKS_RG" \
-      --name "$AKS_CLUSTER" \
-      --file kubeconfig
+  - az aks get-credentials -g $AKS_RG" -n "$AKS_CLUSTER" --file kubeconfig
 
     - export KUBECONFIG=$PWD/kubeconfig
   script:
