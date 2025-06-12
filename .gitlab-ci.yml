@@ -29,12 +29,17 @@ build_all:
   tags:
     - deploy
   before_script:
-    - apt-get update && apt-get install -y curl unzip
-    - curl -sLo kubelogin.zip \
-        https://github.com/Azure/kubelogin/releases/latest/download/kubelogin-linux-amd64.zip
-    - unzip kubelogin.zip -d /usr/local/bin
-    - rm kubelogin.zip
-    - chmod +x /usr/local/bin/kubelogin
+  - mkdir -p /var/lib/apt/lists/partial
+  
+  # 2) update & install curl + unzip
+  - apt-get update && apt-get install -y curl unzip
+
+  # 3) download & install kubelogin
+  - curl -sSL -o kubelogin.zip \
+      https://github.com/Azure/kubelogin/releases/latest/download/kubelogin-linux-amd64.zip
+  - unzip kubelogin.zip -d /usr/local/bin
+  - chmod +x /usr/local/bin/kubelogin
+  - rm kubelogin.zip
     
     - echo "$KUBECONFIG" | base64 -d > kubeconfig
     - export KUBECONFIG=$PWD/kubeconfig
