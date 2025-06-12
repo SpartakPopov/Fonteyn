@@ -12,15 +12,8 @@ spec:
       labels:
         app: booking
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - booking
+      nodeSelector:
+        app: booking
       containers:
         - name: booking
           image: fonteyncr.azurecr.io/booking:IMAGE_TAG
