@@ -29,6 +29,10 @@ class Reservation(db.Model):
     has_vehicle = db.Column(db.Boolean, default=False)
     license_plate = db.Column(db.String(20), nullable=True)
 
+class EnergyUsageDaily(db.Model):
+    date = db.Column(db.Date, primary_key=True, nullable=False)
+    average_usage_kwh = db.Column(db.Float, nullable=False)
+
 class unit:
     def __init__(self, Unit_id, Year, Availability, Price_per_day):
         self.unit_id = Unit_id
