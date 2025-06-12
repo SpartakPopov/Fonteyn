@@ -31,9 +31,10 @@ build_all:
     - deploy
   before_script:
     - az login --service-principal -u "$AZ_CLIENT_ID" -p "$AZ_CLIENT_SECRET" --tenant "$AZ_TENANT_ID"
-    - az aks install-cli --install-location /usr/local/bin/kubectl
+    - az aks install-cli --install-location /usr/local/bin/kubectl --kubelogin-install-location /usr/local/bin/kubelogin
     - az aks get-credentials -g "$AKS_RG" -n "$AKS_CLUSTER" --file kubeconfig
     - export KUBECONFIG=$PWD/kubeconfig
+    - kubelogin convert-kubeconfig --login spn --client-id "$AZ_CLIENT_ID" --client-secret "$AZ_CLIENT_SECRET" --tenant-id "$AZ_TENANT_ID"
   script:
     - sed "s|IMAGE_TAG|$CI_COMMIT_SHORT_SHA|g" ./$APP_NAME/k8s/deployment.yml | kubectl apply -f -
     - kubectl apply -f ./$APP_NAME/k8s/service.yml
