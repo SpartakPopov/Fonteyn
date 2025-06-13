@@ -4,11 +4,16 @@ from sqlalchemy.orm import sessionmaker
 import mysql.connector
 from dotenv import load_dotenv
 import os
-load_dotenv()
+from pathlib import Path
+
+file_path = Path("license-plate.db")
 
 # Create engine and base
-engine = create_engine('sqlite:///license-plate.db', echo=True)
+engine = create_engine('sqlite:///license-plate.db', echo=False)
 Base = declarative_base()
+
+# Create session factory
+SessionLocal = sessionmaker(bind=engine)
 
 # Define your model
 class Licenses(Base):
@@ -19,13 +24,13 @@ class Licenses(Base):
     booked = Column(Boolean)
     check_in = Column(Date)
     check_out = Column(Date)
+    
+if file_path.exists() == False:
 
-# Create tables
-Base.metadata.create_all(engine)
+    # Create tables
+    Base.metadata.create_all(engine)
 
-# Create session factory
-SessionLocal = sessionmaker(bind=engine)
-
+print("database exists")
 def new_plate(license, check_in=None, check_out=None):
     session = SessionLocal()
     plate = Licenses(
@@ -37,25 +42,36 @@ def new_plate(license, check_in=None, check_out=None):
     session.commit()
     session.close()
 
-# Connect to Azure MySQL Flexible Server
-conn = mysql.connector.connect(
-    host= os.getenv('DB_HOST'),
-    user= os.getenv('DB_USER'),
-    password= os.getenv('DB_PASSWORD'),
-    database= os.getenv('DB_NAME')
-)
+def sync_database():
+    try:
+        load_dotenv()
+        # Connect to Azure MySQL Flexible Server
+        conn = mysql.connector.connect(
+            host= os.getenv('DB_HOST'),
+            user= os.getenv('DB_USER'),
+            password= os.getenv('DB_PASSWORD'),
+            database= os.getenv('DB_NAME'),
+            connection_timeout=10
+        )
 
-cursor = conn.cursor()
+        cursor = conn.cursor()
 
-# Run your query
-cursor.execute("SELECT license_plate, check_in, check_out FROM reservation;")
+        # Run your query
+        cursor.execute("SELECT license_plate, check_in, check_out FROM reservation;")
 
-# Fetch all rows
-license_plates = cursor.fetchall()
+        # Fetch all rows
+        license_plates = cursor.fetchall()
 
-# Clean up
-cursor.close()
-conn.close()
+        # Clean up
+        cursor.close()
+        conn.close()
 
-for plate in license_plates:
-    new_plate(*plate)
+        for plate in license_plates:
+            new_plate(*plate)
+
+        print("Succesfully synced the database!")
+        return True 
+
+    except Exception as e:
+        print(f"Database sync failed. Re-trying in an hour! {e}")  
+        return False
