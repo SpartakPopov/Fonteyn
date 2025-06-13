@@ -246,30 +246,6 @@ async def edit_user_post(
 
     return RedirectResponse(url="/dashboard", status_code=303)
         
-    if group_ids:
-        group_result = assign_user_to_groups(user["access_token"], user_id, group_ids)
-        if isinstance(group_result, tuple):
-            status_code, error_response = group_result
-            error_message = error_response.get("error", {}).get("message", "Failed to assign user to groups.")
-            logger.error(f"Group assignment error: {status_code} - {error_message}")
-            user_data = get_user_by_id(user["access_token"], user_id)
-            groups = get_all_groups(user["access_token"]) or []
-            user_groups = get_user_groups(user["access_token"], user_id) or []
-            user_group_ids = [group["id"] for group in user_groups]
-            return templates.TemplateResponse(
-                "edit_user.html",
-                {
-                    "request": request,
-                    "user_id": user_id,
-                    "user_data": user_data,
-                    "groups": groups,
-                    "user_group_ids": user_group_ids,
-                    "error": error_message
-                },
-                status_code=400
-            )
-
-    return RedirectResponse(url="/dashboard", status_code=303)
 
 
 @app.post("/delete_user/{user_id}", response_class=RedirectResponse)
