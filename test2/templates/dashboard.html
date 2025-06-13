@@ -2,26 +2,517 @@
 
 {% block content %}
 <div class="dashboard">
-    <h2>Welcome, {{ user.username }}!</h2>
-    
-    <div class="dashboard-section">
-        <h3>Your Reservations</h3>
-        {% if reservations %}
-            <div class="reservations-grid">
-                {% for reservation in reservations %}
-                    <div class="reservation-card">
-                        <h4>{{ reservation.accommodation_type }}</h4>
-                        <p><strong>Check-in:</strong> {{ reservation.check_in.strftime('%Y-%m-%d') }}</p>
-                        <p><strong>Check-out:</strong> {{ reservation.check_out.strftime('%Y-%m-%d') }}</p>
-                        <p><strong>Guests:</strong> {{ reservation.guests }}</p>
-                        <p><strong>Status:</strong> {{ reservation.status }}</p>
-                    </div>
-                {% endfor %}
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="welcome-section">
+                <h1>Welcome back, {{ user.username }}! 👋</h1>
+                <p class="date">{{ now.strftime('%A, %B %d, %Y') }}</p>
             </div>
-        {% else %}
-            <p>You don't have any reservations yet.</p>
-            <a href="{{ url_for('make_reservation') }}" class="cta-button">Make a Reservation</a>
-        {% endif %}
+            <div class="quick-actions">
+                <a href="{{ url_for('make_reservation') }}" class="action-button">
+                    <span class="icon">📅</span>
+                    <span class="text">Make Reservation</span>
+                </a>
+                <a href="{{ url_for('energy_consumption') }}" class="action-button">
+                    <span class="icon">⚡</span>
+                    <span class="text">Energy Monitor</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="action-button logout">
+                    <span class="icon">🚪</span>
+                    <span class="text">Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="dashboard-content">
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <h3>Active Reservations</h3>
+                    <p class="stat-value">{{ reservations|selectattr('status', 'equalto', 'confirmed')|list|length }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-info">
+                    <h3>Pending Requests</h3>
+                    <p class="stat-value">{{ reservations|selectattr('status', 'equalto', 'pending')|list|length }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-info">
+                    <h3>Total Bookings</h3>
+                    <p class="stat-value">{{ reservations|length }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservations Section -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2>Your Reservations</h2>
+                <a href="{{ url_for('make_reservation') }}" class="new-reservation-button">
+                    <span class="icon">➕</span>
+                    New Reservation
+                </a>
+            </div>
+
+            {% if reservations %}
+                <div class="reservations-grid">
+                    {% for reservation in reservations %}
+                        <div class="reservation-card">
+                            <div class="card-header">
+                                <h3>{{ reservation.accommodation_type|title }}</h3>
+                                <span class="status-badge {{ reservation.status }}">{{ reservation.status|title }}</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="info-row">
+                                    <span class="label">Check-in</span>
+                                    <span class="value">{{ reservation.check_in.strftime('%b %d, %Y') }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">Check-out</span>
+                                    <span class="value">{{ reservation.check_out.strftime('%b %d, %Y') }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">Guests</span>
+                                    <span class="value">{{ reservation.guests }} people</span>
+                                </div>
+                                {% if reservation.has_vehicle %}
+                                    <div class="info-row">
+                                        <span class="label">Vehicle</span>
+                                        <span class="value">{{ reservation.license_plate }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% if reservation.special_requests %}
+                                <div class="special-requests">
+                                    <span class="label">Special Requests:</span>
+                                    <p>{{ reservation.special_requests }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🏠</div>
+                    <h3>No Reservations Yet</h3>
+                    <p>Start planning your stay at Fonteyn Holiday Parks</p>
+                    <a href="{{ url_for('make_reservation') }}" class="cta-button">Make Your First Reservation</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Links Section -->
+        <div class="quick-links">
+            <h2>Quick Links</h2>
+            <div class="links-grid">
+                <a href="#" class="link-card">
+                    <span class="icon">📱</span>
+                    <span class="text">Mobile App</span>
+                </a>
+                <a href="#" class="link-card">
+                    <span class="icon">📞</span>
+                    <span class="text">Contact Support</span>
+                </a>
+                <a href="#" class="link-card">
+                    <span class="icon">📋</span>
+                    <span class="text">House Rules</span>
+                </a>
+                <a href="#" class="link-card">
+                    <span class="icon">❓</span>
+                    <span class="text">FAQ</span>
+                </a>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+.dashboard {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--surface-color) 0%, var(--primary-color) 100%);
+    padding: 2rem;
+}
+
+.dashboard-header {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.welcome-section h1 {
+    font-size: 2.5rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.date {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.action-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.action-button.logout {
+    background: rgba(231, 76, 60, 0.1);
+}
+
+.action-button.logout:hover {
+    background: rgba(231, 76, 60, 0.2);
+}
+
+.dashboard-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    font-size: 2rem;
+}
+
+.stat-info h3 {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    color: var(--text-color);
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.dashboard-section {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.section-header h2 {
+    color: var(--text-color);
+    font-size: 1.8rem;
+}
+
+.new-reservation-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    background: var(--secondary-color);
+    color: var(--text-color);
+    text-decoration: none;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.new-reservation-button:hover {
+    background: #3451d1;
+    transform: translateY(-2px);
+}
+
+.reservations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.reservation-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.reservation-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.card-header h3 {
+    color: var(--text-color);
+    font-size: 1.2rem;
+}
+
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.status-badge.pending {
+    background: rgba(241, 196, 15, 0.2);
+    color: #f1c40f;
+}
+
+.status-badge.confirmed {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.status-badge.cancelled {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+}
+
+.info-row .label {
+    color: var(--text-muted);
+}
+
+.info-row .value {
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.special-requests {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.special-requests .label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.special-requests p {
+    color: var(--text-color);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    color: var(--text-color);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+.quick-links {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.quick-links h2 {
+    color: var(--text-color);
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.link-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.link-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-5px);
+}
+
+.link-card .icon {
+    font-size: 2rem;
+}
+
+.link-card .text {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+@media (max-width: 1024px) {
+    .dashboard {
+        padding: 1.5rem;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .quick-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem;
+    }
+    
+    .welcome-section h1 {
+        font-size: 2rem;
+    }
+    
+    .quick-actions {
+        flex-direction: column;
+    }
+    
+    .action-button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .reservations-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard {
+        padding: 1rem;
+    }
+    
+    .dashboard-header {
+        padding: 1rem;
+    }
+    
+    .welcome-section h1 {
+        font-size: 1.75rem;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .new-reservation-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add animation classes to elements
+    const elements = document.querySelectorAll('.stat-card, .reservation-card, .link-card');
+    elements.forEach((element, index) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            element.style.transition = 'all 0.5s ease';
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
 {% endblock %} 

@@ -1,20 +1,32 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
-from models import db, User, Reservation
+from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
+from models import db, User, Reservation, EnergyUsageDaily
 from security import hash_password, check_password
+from entra_auth import (
+    build_auth_url, get_token_from_code, get_user_info, 
+    create_or_get_user, entra_id_required, admin_entra_id_required
+)
 import yaml
 from datetime import datetime
 import os
 from functools import wraps
+from energy import energy_monitor
+from dotenv import load_dotenv
+from urllib.parse import quote_plus
 import requests
+
+load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fonteyn.db'
+# Properly encode the password to handle special characters
+password = quote_plus(os.getenv('DB_PASSWORD', ''))
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+mysqlconnector://{os.getenv('DB_USER')}:{password}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['ERP_URL'] = "https://erpnext-fonteyn.duckdns.org"
-app.config['ERP_API_KEY'] = "aae4c683a84e8f8"
-app.config['ERP_API_SECRET'] = "196347af676879c"
+app.config['ERP_API_KEY'] = os.getenv('ERP_API_KEY')
+app.config['ERP_API_SECRET'] = os.getenv('ERP_API_SECRET')
+
 
 db.init_app(app)
 
@@ -25,8 +37,6 @@ if not os.path.exists('instance'):
 # Create tables and initial admin user
 def init_db():
     with app.app_context():
-        # Drop all existing tables
-        db.drop_all()
         # Create all tables
         db.create_all()
         
@@ -50,6 +60,7 @@ def init_db():
 with open('accommodations.yaml', 'r') as file:
     ACCOMMODATIONS = yaml.safe_load(file)
 
+# ERPNext API POST request
 def erpnext_post(endpoint, data):
     url = f"{app.config['ERP_URL']}/api/resource/{endpoint}"
     headers = {
@@ -57,6 +68,7 @@ def erpnext_post(endpoint, data):
         "Content-Type": "application/json"
     }
     return requests.post(url, json=data, headers=headers)
+
 
 # Admin required decorator
 def admin_required(f):
@@ -90,7 +102,7 @@ def register():
         db.session.commit()
         flash('Registration successful')
         return redirect(url_for('login'))
-    return render_template('register.html')
+    return render_template('auth.html', active_tab='register')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -104,15 +116,27 @@ def login():
             flash('Login successful')
             return redirect(url_for('dashboard'))
         flash('Invalid email or password')
-    return render_template('login.html')
+    return render_template('auth.html', active_tab='login')
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session:
+    # Check for either traditional or Entra ID authentication
+    if 'user_id' not in session and 'entra_id_user' not in session:
         return redirect(url_for('login'))
-    user = User.query.get(session['user_id'])
+    
+    # Get user from either session type
+    if 'entra_id_user' in session:
+        user = User.query.get(session['entra_id_user']['id'])
+    else:
+        user = User.query.get(session['user_id'])
+    
+    if not user:
+        session.pop('user_id', None)
+        session.pop('entra_id_user', None)
+        return redirect(url_for('login'))
+    
     reservations = Reservation.query.filter_by(user_id=user.id).all()
-    return render_template('dashboard.html', user=user, reservations=reservations)
+    return render_template('dashboard.html', user=user, reservations=reservations, now=datetime.now())
 
 @app.route('/accommodation/<type>')
 def accommodation_details(type):
@@ -125,7 +149,8 @@ def accommodation_details(type):
 
 @app.route('/booking/<type>', methods=['GET'])
 def booking(type):
-    if 'user_id' not in session:
+    # Check for either traditional or Entra ID authentication
+    if 'user_id' not in session and 'entra_id_user' not in session:
         return redirect(url_for('login'))
         
     if type not in ACCOMMODATIONS:
@@ -141,8 +166,12 @@ def booking(type):
 
 @app.route('/make_reservation', methods=['GET', 'POST'])
 def make_reservation():
-    if 'user_id' not in session:
+    # Check for either traditional or Entra ID authentication
+    if 'user_id' not in session and 'entra_id_user' not in session:
         return redirect(url_for('login'))
+    
+    # Get user ID from either session type
+    user_id = session.get('entra_id_user', {}).get('id') or session.get('user_id')
     
     if request.method == 'POST':
         check_in = datetime.strptime(request.form['check_in'], '%Y-%m-%d').date()
@@ -173,7 +202,7 @@ def make_reservation():
             return redirect(url_for('booking', type=accommodation_type))
         
         reservation = Reservation(
-            user_id=session['user_id'],
+            user_id=user_id,
             check_in=check_in,
             check_out=check_out,
             accommodation_type=accommodation_type,
@@ -185,11 +214,9 @@ def make_reservation():
         )
         db.session.add(reservation)
         db.session.commit()
-        
-        #The next block of code links to the ERPNext API to create a customer and a payment entry
-        
+
         customer_data = {
-            "customer_name": User.query.get(session['user_id']).username,
+            "customer_name": User.query.get(user_id).username,
             "customer_type": "Individual",
             "customer_group": "Individual",
             "territory": "All Territories"
@@ -198,7 +225,7 @@ def make_reservation():
         payment_data = {
             "payment_type": "Receive",
             "party_type": "Customer",
-            "party": User.query.get(session['user_id']).username,
+            "party": User.query.get(user_id).username,
             "paid_amount": accommodation['price'] * (check_out - check_in).days,
             "received_amount": accommodation['price'] * (check_out - check_in).days,
             "posting_date": datetime.now().strftime('%Y-%m-%d'),
@@ -222,7 +249,8 @@ def make_reservation():
             print({"success": True}, 201)
         else:
             print({"success": False, "error": pay_json}, pay_resp.status_code)
-        
+
+
         flash('Reservation created successfully')
         return redirect(url_for('dashboard'))
     
@@ -233,6 +261,7 @@ def make_reservation():
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
+    session.pop('entra_id_user', None)  # Clear Entra ID session
     return redirect(url_for('home'))
 
 @app.route('/admin/dashboard')
@@ -341,6 +370,108 @@ def admin_create_reservation():
     
     return render_template('admin/create_reservation.html', accommodations=ACCOMMODATIONS)
 
+@app.route('/energy-consumption')
+def energy_consumption():
+    # Check for either traditional or Entra ID authentication
+    if 'user_id' not in session and 'entra_id_user' not in session:
+        return redirect(url_for('login'))
+    return render_template('energy_consumption.html')
+
+@app.route('/api/energy/current')
+def get_current_energy():
+    # Check for either traditional or Entra ID authentication
+    if 'user_id' not in session and 'entra_id_user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    current_usage = energy_monitor.update_readings()
+    daily_average = energy_monitor.calculate_daily_average()
+    
+    return jsonify({
+        'current_usage': current_usage,
+        'daily_average': daily_average
+    })
+
+@app.route('/api/energy/history')
+def get_energy_history():
+    # Check for either traditional or Entra ID authentication
+    if 'user_id' not in session and 'entra_id_user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    # Get the last 30 days of energy usage data
+    history = EnergyUsageDaily.query.order_by(EnergyUsageDaily.date.desc()).limit(30).all()
+    
+    # Format the data for the frontend
+    data = [{
+        'date': record.date.strftime('%Y-%m-%d'),
+        'average_usage_kwh': record.average_usage_kwh
+    } for record in reversed(history)]  # Reverse to get chronological order
+    
+    return jsonify(data)
+
+# Entra ID Authentication Routes
+@app.route('/admin/entra-id/login')
+def entra_id_login():
+    """Redirect to Microsoft Entra ID for admin authentication"""
+    auth_url = build_auth_url()
+    return redirect(auth_url)
+
+@app.route('/admin/msauth')
+def entra_id_callback():
+    """Handle the callback from Microsoft Entra ID - Admin only"""
+    error = request.args.get('error')
+    if error:
+        flash(f'Authentication error: {error}')
+        return redirect(url_for('admin_login'))
+    
+    auth_code = request.args.get('code')
+    if not auth_code:
+        flash('No authorization code received')
+        return redirect(url_for('admin_login'))
+    
+    # Get token from authorization code
+    token_result = get_token_from_code(auth_code)
+    if 'error' in token_result:
+        flash(f'Token error: {token_result.get("error_description", "Unknown error")}')
+        return redirect(url_for('admin_login'))
+    
+    # Get user information
+    user_info = get_user_info(token_result['access_token'])
+    if not user_info:
+        flash('Failed to get user information')
+        return redirect(url_for('admin_login'))
+    
+    # Create or get user from database
+    user = create_or_get_user(user_info)
+    if not user:
+        flash('Failed to create or retrieve user')
+        return redirect(url_for('admin_login'))
+    
+    # Check if user has admin privileges
+    if not user.is_admin:
+        flash('Access denied. Entra ID authentication is for administrators only.')
+        return redirect(url_for('admin_login'))
+    
+    # Store user info in session
+    session['entra_id_user'] = {
+        'email': user.email,
+        'name': user.username,
+        'id': user.id
+    }
+    
+    # Also set user_id for compatibility with existing code
+    session['user_id'] = user.id
+    
+    flash('Entra ID admin login successful')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/entra-id/logout')
+def entra_id_logout():
+    """Logout from Entra ID - Admin only"""
+    session.pop('entra_id_user', None)
+    session.pop('user_id', None)
+    flash('Admin logged out successfully')
+    return redirect(url_for('admin_login'))
+
 if __name__ == '__main__':
     init_db()  # Initialize database and create admin user
-    app.run(host="0.0.0.0", port=5000, debug=True) 
+    app.run(debug=True) 
