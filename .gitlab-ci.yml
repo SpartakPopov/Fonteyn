@@ -36,6 +36,13 @@ build_all:
     - export KUBECONFIG=$PWD/kubeconfig
     - kubelogin convert-kubeconfig --login spn --client-id "$AZ_CLIENT_ID" --client-secret "$AZ_CLIENT_SECRET" --tenant-id "$AZ_TENANT_ID"
   script:
+    - echo "$TLS_CRT" > tls.crt
+    - echo "$TLS_KEY" > tls.key
+    - kubectl delete secret hrm-tls-secret --ignore-not-found
+    - kubectl create secret tls hrm-tls-secret --cert=tls.crt --key=tls.key
+    - kubectl apply -f hrm-ingress.yaml
+    - shred -u tls.crt tls.key
+
     - mkdir -p secure
     - echo "$ENV_FILE" > ./secure/.env
 
