@@ -28,6 +28,15 @@
                 </div>
                 <button type="submit" class="admin-login-button">Login to Admin Panel</button>
             </form>
+            <div style="text-align:center; margin: 1.5rem 0;">
+                <span style="color:#888;">or</span>
+            </div>
+            <a href="{{ url_for('entra_id_login') }}" class="microsoft-auth-button" style="display:flex;align-items:center;justify-content:center;gap:0.75rem;width:100%;padding:1rem;background:#f3f3f3;border:1px solid #ccc;border-radius:8px;color:#222;text-decoration:none;font-size:1rem;transition:all 0.3s;margin-bottom:1rem;">
+                <svg width="20" height="20" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 1H1v9h9V1zM20 1h-9v9h9V1zM10 11H1v9h9v-9zM20 11h-9v9h9v-9z" fill="currentColor"/>
+                </svg>
+                <span>Sign in with Microsoft (Entra ID)</span>
+            </a>
             <div class="admin-login-footer">
                 <a href="{{ url_for('home') }}" class="back-to-site">← Back to Main Site</a>
             </div>

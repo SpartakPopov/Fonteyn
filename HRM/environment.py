@@ -10,4 +10,13 @@ AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
 AZURE_CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET")
 AZURE_AUTHORITY = os.getenv("AZURE_AUTHORITY")
 AZURE_REDIRECT_URI = os.getenv("AZURE_REDIRECT_URI")
-AZURE_SCOPE = ["User.Read", "User.Read.All", "User.ReadWrite.All", "Directory.ReadWrite.All"]
+HRM_ADMIN_GROUP_ID = os.getenv("HRM_ADMIN_GROUP_ID")
+AZURE_SCOPE = [
+    "https://graph.microsoft.com/User.Read",
+    "https://graph.microsoft.com/User.Read.All",
+    "https://graph.microsoft.com/User.ReadWrite.All",
+    "https://graph.microsoft.com/GroupMember.Read.All",
+    "https://graph.microsoft.com/Group.Read.All",
+    "https://graph.microsoft.com/Directory.ReadWrite.All"
+]
+HRM_ADMIN_GROUP_ID = os.getenv("HRM_ADMIN_GROUP_ID")

@@ -9,7 +9,7 @@ services:
   HRM:
     container_name: hrm
     build: 
-      context: ./hrm
+      context: ./HRM
     image: fonteyncr.azurecr.io/hrm:latest
 
   #backend:

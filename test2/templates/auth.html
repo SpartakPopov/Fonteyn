@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-wrapper">
+        <!-- Side Visual Section (Desktop Only) -->
+        <div class="auth-visual">
+            <div class="visual-content">
+                <h2>Welcome to Fonteyn Holiday Parks</h2>
+                <p>Experience the perfect blend of comfort and nature in our beautiful accommodations.</p>
+                <div class="visual-features">
+                    <div class="feature">
+                        <span class="feature-icon">🏡</span>
+                        <span>Luxury Accommodations</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">🌳</span>
+                        <span>Natural Surroundings</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">⚡</span>
+                        <span>Smart Energy Management</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Form Section -->
+        <div class="auth-card">
+            <div class="auth-header">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Fonteyn Holiday Parks" class="auth-logo">
+                <h1>Welcome Back</h1>
+                <p class="auth-subtitle">Sign in to your account or create a new one</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="tab-button {% if active_tab == 'login' %}active{% endif %}" data-tab="login">Login</button>
+                <button class="tab-button {% if active_tab == 'register' %}active{% endif %}" data-tab="register">Register</button>
+            </div>
+
+            <div class="auth-forms">
+                <!-- Login Form -->
+                <form method="POST" action="{{ url_for('login') }}" class="auth-form {% if active_tab == 'login' %}active{% endif %}" id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <div class="input-group">
+                            <span class="input-icon">✉️</span>
+                            <input type="email" id="login-email" name="email" required 
+                                   placeholder="Enter your email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <div class="input-group">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="login-password" name="password" required 
+                                   placeholder="Enter your password">
+                        </div>
+                    </div>
+                    <button type="submit" class="auth-button">
+                        <span class="button-text">Sign In</span>
+                        <div class="button-loader"></div>
+                    </button>
+                    
+                    <!-- Divider -->
+                    <div class="auth-divider">
+                        <span>or</span>
+                    </div>
+                    
+                    <!-- Microsoft Entra ID Login Button -->
+                    <a href="{{ url_for('entra_id_login') }}" class="microsoft-auth-button">
+                        <svg width="20" height="20" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 1H1v9h9V1zM20 1h-9v9h9V1zM10 11H1v9h9v-9zM20 11h-9v9h9v-9z" fill="currentColor"/>
+                        </svg>
+                        <span>Sign in with Microsoft</span>
+                    </a>
+                </form>
+
+                <!-- Register Form -->
+                <form method="POST" action="{{ url_for('register') }}" class="auth-form {% if active_tab == 'register' %}active{% endif %}" id="register-form">
+                    <div class="form-group">
+                        <label for="register-username">Username</label>
+                        <div class="input-group">
+                            <span class="input-icon">👤</span>
+                            <input type="text" id="register-username" name="username" required 
+                                   placeholder="Choose a username">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <div class="input-group">
+                            <span class="input-icon">✉️</span>
+                            <input type="email" id="register-email" name="email" required 
+                                   placeholder="Enter your email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <div class="input-group">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="register-password" name="password" required 
+                                   placeholder="Create a password">
+                        </div>
+                    </div>
+                    <button type="submit" class="auth-button">
+                        <span class="button-text">Create Account</span>
+                        <div class="button-loader"></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--surface-color) 0%, var(--primary-color) 100%);
+}
+
+.auth-wrapper {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    gap: 2rem;
+    align-items: stretch;
+}
+
+.auth-visual {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+}
+
+.visual-content {
+    max-width: 400px;
+}
+
+.visual-content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.visual-content p {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+}
+
+.visual-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.feature {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.1rem;
+}
+
+.feature-icon {
+    font-size: 1.5rem;
+}
+
+.auth-card {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.5s ease-out;
+    min-width: 400px;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-logo {
+    width: 120px;
+    height: auto;
+    margin-bottom: 1.5rem;
+}
+
+.auth-header h1 {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.auth-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 0.8rem;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.tab-button::after {
+    content: '';
+    position: absolute;
+    bottom: -1rem;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--secondary-color);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.tab-button.active {
+    color: var(--text-color);
+}
+
+.tab-button.active::after {
+    transform: scaleX(1);
+}
+
+.auth-forms {
+    position: relative;
+}
+
+.auth-form {
+    display: none;
+    animation: slideIn 0.3s ease-out;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.input-group input::placeholder {
+    color: var(--text-muted);
+}
+
+.auth-button {
+    width: 100%;
+    padding: 1rem;
+    background: var(--secondary-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-button:hover {
+    background: #3451d1;
+    transform: translateY(-2px);
+}
+
+.auth-button:active {
+    transform: translateY(0);
+}
+
+.auth-divider {
+    text-align: center;
+    margin: 1.5rem 0;
+    position: relative;
+}
+
+.auth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.auth-divider span {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    padding: 0 1rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    position: relative;
+    z-index: 1;
+}
+
+.microsoft-auth-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+.microsoft-auth-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.microsoft-auth-button:active {
+    transform: translateY(0);
+}
+
+.microsoft-auth-button svg {
+    flex-shrink: 0;
+}
+
+.auth-button.loading .button-text {
+    visibility: hidden;
+}
+
+.auth-button.loading .button-loader {
+    display: block;
+}
+
+.button-loader {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--text-color);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+    .auth-wrapper {
+        max-width: 800px;
+    }
+    
+    .visual-content h2 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .auth-wrapper {
+        flex-direction: column;
+    }
+    
+    .auth-visual {
+        display: none;
+    }
+    
+    .auth-card {
+        min-width: unset;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 1rem;
+    }
+    
+    .auth-card {
+        padding: 1.5rem;
+    }
+    
+    .auth-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .auth-subtitle {
+        font-size: 1rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const forms = document.querySelectorAll('.auth-form');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and forms
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            forms.forEach(form => form.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding form
+            button.classList.add('active');
+            const formId = button.dataset.tab + '-form';
+            document.getElementById(formId).classList.add('active');
+        });
+    });
+    
+    // Handle form submissions
+    const authForms = document.querySelectorAll('.auth-form');
+    authForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const button = this.querySelector('.auth-button');
+            button.classList.add('loading');
+            
+            // Remove loading state after 2 seconds (for demo)
+            // In production, remove this and handle the actual form submission
+            setTimeout(() => {
+                button.classList.remove('loading');
+            }, 2000);
+        });
+    });
+});
+</script>
+{% endblock %} 

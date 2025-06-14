@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit User</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+        <h2>Edit User</h2>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        <form class="form" action="/edit_user/{{ user_id }}" method="post">
+            <div class="form-group">
+                <label for="display_name">Display Name:</label>
+                <input type="text" id="display_name" name="display_name" value="{{ user_data.displayName }}" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="text" id="email" name="email" value="{{ user_data.userPrincipalName }}" required>
+            </div>
+            <div class="form-group">
+                <label for="group_ids">Groups:</label>
+                <select id="group_ids" name="group_ids" multiple>
+                    {% for group in groups %}
+                        <option value="{{ group.id }}" {% if group.id in user_group_ids %}selected{% endif %}>
+                            {{ group.displayName }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <p><small>Hold Ctrl to select multiple</small></p>
+            </div>
+            <button type="submit">Save Changes</button>
+        </form>
+        <a href="/dashboard">Back to Dashboard</a>
+    </div>
+</body>
+</html>

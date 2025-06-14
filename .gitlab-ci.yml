@@ -2,17 +2,20 @@ stages:
   - build
   - deploy
 
+variables:
+  DOCKER_TLS_CERTDIR: ''
+
 build_all:
   stage: build
-  image: docker:20.10
+  image: docker:latest
   services:
     - docker:dind
   tags:
-    - kubernetes
+    - build
   before_script:
-    - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
+    - docker login -u "fonteyncr" -p "Ywfz5AFidIRdwlYwl+qOs2CLxtp8Aq9QSa8KoBn5s7+ACRAJovcP" fonteyncr.azurecr.io
   script:
-    - docker-compose build
+    - docker-compose up --build -d
     - docker tag fonteyncr.azurecr.io/booking fonteyncr.azurecr.io/booking:$CI_COMMIT_SHORT_SHA
     - docker tag fonteyncr.azurecr.io/hrm fonteyncr.azurecr.io/hrm:$CI_COMMIT_SHORT_SHA
     - docker push fonteyncr.azurecr.io/booking:$CI_COMMIT_SHORT_SHA
@@ -20,25 +23,31 @@ build_all:
 
 .deploy_template: &deploy_template
   stage: deploy
-  image: bitnami/kubectl:latest
+  image:
+    name: mcr.microsoft.com/azure-cli:latest
+    entrypoint: [""]
+
   tags:
-    - kubernetes
+    - deploy
   before_script:
-    - echo "$KUBECONFIG" | base64 -d > kubeconfig
+    - az login --service-principal -u "$AZ_CLIENT_ID" -p "$AZ_CLIENT_SECRET" --tenant "$AZ_TENANT_ID"
+    - az aks install-cli --install-location /usr/local/bin/kubectl --kubelogin-install-location /usr/local/bin/kubelogin
+    - az aks get-credentials -g "$AKS_RG" -n "$AKS_CLUSTER" --file kubeconfig
     - export KUBECONFIG=$PWD/kubeconfig
+    - kubelogin convert-kubeconfig --login spn --client-id "$AZ_CLIENT_ID" --client-secret "$AZ_CLIENT_SECRET" --tenant-id "$AZ_TENANT_ID"
   script:
-    - sed "s|IMAGE_TAG|$CI_COMMIT_SHORT_SHA|g" apps/$APP_NAME/k8s/deployment.yaml | kubectl apply -f -
-    - kubectl apply -f apps/$APP_NAME/k8s/service.yaml
+    - sed "s|IMAGE_TAG|$CI_COMMIT_SHORT_SHA|g" ./$APP_NAME/k8s/deployment.yml | kubectl apply -f -
+    - kubectl apply -f ./$APP_NAME/k8s/service.yml
 
 
 deploy_booking:
   variables:
-    APP_NAME: booking
+    APP_NAME: test2
   needs: ["build_all"]
   <<: *deploy_template
 
 deploy_hrm:
   variables:
-    APP_NAME: hrm
+    APP_NAME: HRM
   needs: ["build_all"]
   <<: *deploy_template 
