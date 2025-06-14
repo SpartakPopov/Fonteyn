@@ -21,4 +21,4 @@ spec:
             - containerPort: 8000
           envFrom:
             - configMapRef:
-                name: .env
+                name: hrm-env
