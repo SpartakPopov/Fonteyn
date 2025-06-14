@@ -42,11 +42,3 @@ deploy_hrm:
     APP_NAME: hrm
   needs: ["build_all"]
   <<: *deploy_template 
-
-#deploy_backend:
-#  stage: deploy
-#  variables:
-#    APP_NAME: backend
-#  needs: ["build_all"]
-#  <<: *deploy_template
-

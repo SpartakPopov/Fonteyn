@@ -26,3 +26,6 @@ spec:
         image: fonteyncr.azurecr.io/hrm:IMAGE_TAG
         ports:
           - containerPort: 80
+        envFrom:
+          - configMapRef:
+              name: .env
