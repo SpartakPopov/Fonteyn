@@ -29,6 +29,9 @@ build_all:
 
   tags:
     - deploy
+  secrets:
+    ENV_FILE:
+      file: .env
   before_script:
     - az login --service-principal -u "$AZ_CLIENT_ID" -p "$AZ_CLIENT_SECRET" --tenant "$AZ_TENANT_ID"
     - az aks install-cli --install-location /usr/local/bin/kubectl --kubelogin-install-location /usr/local/bin/kubelogin
@@ -37,11 +40,11 @@ build_all:
     - kubelogin convert-kubeconfig --login spn --client-id "$AZ_CLIENT_ID" --client-secret "$AZ_CLIENT_SECRET" --tenant-id "$AZ_TENANT_ID"
   script:
     - mkdir -p secure
-    - cp $CI_PROJECT_DIR/.secure-files/.env ./secure/.env
+    - cp $ENV_FILE secure/.env
 
     - kubectl delete configmap hrm-dotenv --ignore-not-found
     - kubectl create configmap hrm-dotenv --from-file=.env=./secure/.env
-    
+
     - sed "s|IMAGE_TAG|$CI_COMMIT_SHORT_SHA|g" ./$APP_NAME/k8s/deployment.yml | kubectl apply -f -
     - kubectl apply -f ./$APP_NAME/k8s/service.yml
 
