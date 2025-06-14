@@ -19,6 +19,11 @@ spec:
           image: fonteyncr.azurecr.io/hrm:IMAGE_TAG
           ports:
             - containerPort: 8000
-          envFrom:
-            - configMapRef:
-                name: hrm-env
+          volumeMounts:
+            - name: dotenv-volume
+              mountPath: /app/.env
+              subPath: .env
+      volumes:
+        - name: dotenv-volume
+          configMap:
+            name: hrm-dotenv 

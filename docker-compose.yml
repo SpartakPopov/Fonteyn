@@ -6,16 +6,12 @@ services:
       context: ./test2
     image: fonteyncr.azurecr.io/booking:latest
 
-  HRM:
+  hrm:
     container_name: hrm
     build: 
-      context: ./HRM
+      context: ./hrm
     image: fonteyncr.azurecr.io/hrm:latest
-
-  #backend:
-  #  container_name: backend
-  #  build: 
-  #    context: ./backend
-  #  image: fonteyncr.azurecr.io/backend:latest
+    volumes:
+      - ./hrm/.env:/app/.env
 
 #docker-compose up --build -d
