@@ -10,7 +10,7 @@ services:
     container_name: hrm
     build: 
       context: ./HRM
-    image: fonteyncr.azurecr.io/HRM:latest
+    image: fonteyncr.azurecr.io/hrm:latest
     volumes:
       - ./HRM/.env:/app/.env
 
