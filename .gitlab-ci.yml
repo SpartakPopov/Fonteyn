@@ -36,6 +36,7 @@ build_all:
     - export KUBECONFIG=$PWD/kubeconfig
     - kubelogin convert-kubeconfig --login spn --client-id "$AZ_CLIENT_ID" --client-secret "$AZ_CLIENT_SECRET" --tenant-id "$AZ_TENANT_ID"
   script:
+    - mkdir -p secure
     - echo "$ENV_FILE" > ./secure/.env
 
     - kubectl delete configmap hrm-dotenv --ignore-not-found
