@@ -9,9 +9,9 @@ services:
   hrm:
     container_name: hrm
     build: 
-      context: ./hrm
-    image: fonteyncr.azurecr.io/hrm:latest
+      context: ./HRM
+    image: fonteyncr.azurecr.io/HRM:latest
     volumes:
-      - ./hrm/.env:/app/.env
+      - ./HRM/.env:/app/.env
 
 #docker-compose up --build -d
