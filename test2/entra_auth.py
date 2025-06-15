@@ -10,10 +10,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Entra ID Configuration
-CLIENT_ID = os.getenv('ENTRA_ID_CLIENT_ID', "95697f73-1af0-4b01-8253-e6da816f4f54")
-CLIENT_SECRET = os.getenv('ENTRA_ID_CLIENT_SECRET', "el68Q~hNuTiwWscLkhDPCNb~y-ntuvrrQThWkdgw")
+CLIENT_ID = os.getenv('CLIENT_ID')
+CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 AUTHORITY = os.getenv('ENTRA_ID_AUTHORITY', "https://login.microsoftonline.com/8c28e6dc-ec5c-42dc-9d5f-0be7fa070508")
-REDIRECT_PATH = os.getenv('ENTRA_ID_REDIRECT_PATH', "/admin/msauth")
+REDIRECT_URI = os.getenv('REDIRECT_URI', "https://4.209.44.134/admin/msauth")
 SCOPE = [os.getenv('ENTRA_ID_SCOPE', "User.Read")]
 
 def build_msal_app(cache=None, authority=None):
@@ -30,7 +30,7 @@ def build_auth_url(authority=None, scopes=None, state=None):
     return build_msal_app(authority=authority).get_authorization_request_url(
         scopes or SCOPE,
         state=state or str(uuid.uuid4()),
-        redirect_uri=request.host_url.rstrip('/') + REDIRECT_PATH
+        redirect_uri=REDIRECT_URI
     )
 
 def get_token_from_code(auth_code, authority=None):
@@ -39,7 +39,7 @@ def get_token_from_code(auth_code, authority=None):
     result = app.acquire_token_by_authorization_code(
         auth_code,
         scopes=SCOPE,
-        redirect_uri=request.host_url.rstrip('/') + REDIRECT_PATH
+        redirect_uri=REDIRECT_URI
     )
     return result
 

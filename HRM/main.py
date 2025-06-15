@@ -307,7 +307,7 @@ async def dashboard(request: Request):
 async def logout(request: Request):
     request.session.clear()
     tenant = AZURE_AUTHORITY.split('/')[-1]
-    post_logout_redirect_uri = "http://localhost:8000/login"
+    post_logout_redirect_uri = "https://172.205.84.200/auth/callback"
     params = urlencode({"post_logout_redirect_uri": post_logout_redirect_uri})
     azure_logout_url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/logout?{params}"
     return RedirectResponse(url=azure_logout_url)
