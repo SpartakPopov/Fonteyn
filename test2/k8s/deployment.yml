@@ -26,4 +26,4 @@ spec:
       volumes:
         - name: dotenv-volume
           configMap:
-            name: hrm-dotenv 
+            name: booking-dotenv 
