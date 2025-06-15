@@ -18,4 +18,12 @@ spec:
         - name: booking
           image: fonteyncr.azurecr.io/booking:IMAGE_TAG
           ports:
-            - containerPort: 80
+            - containerPort: 5000
+          volumeMounts:
+            - name: dotenv-volume
+              mountPath: /app/.env
+              subPath: .env
+      volumes:
+        - name: dotenv-volume
+          configMap:
+            name: hrm-dotenv 
