@@ -476,5 +476,9 @@ def entra_id_logout():
     return redirect(url_for('admin_login'))
 
 if __name__ == '__main__':
-    init_db()  # Initialize database and create admin user
+    try:
+        init_db()  # Initialize database and create admin user
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+        raise
     app.run(debug=True) 
