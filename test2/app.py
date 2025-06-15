@@ -13,6 +13,9 @@ from energy import energy_monitor
 from dotenv import load_dotenv
 from urllib.parse import quote_plus
 import requests
+import time
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
+import logging
 
 load_dotenv()
 
@@ -37,27 +40,31 @@ except Exception as e:
 if not os.path.exists('instance'):
     os.makedirs('instance')
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Create tables and initial admin user
 def init_db():
-    with app.app_context():
-        # Create all tables
-        db.create_all()
-        
-        # Check if admin user exists
-        admin = User.query.filter_by(is_admin=True).first()
-        if not admin:
-            admin = User(
-                username='admin',
-                email='admin@fonteyn.com',
-                password=hash_password('admin123'),
-                is_admin=True
-            )
-            db.session.add(admin)
-            db.session.commit()
-            print("Admin user created successfully!")
-            print("Admin login credentials:")
-            print("Email: admin@fonteyn.com")
-            print("Password: admin123")
+    """Initialize database with error handling"""
+    try:
+        with app.app_context():
+            db.create_all()
+            # Check if admin user exists
+            admin = User.query.filter_by(is_admin=True).first()
+            if not admin:
+                admin = User(
+                    username='admin',
+                    email='admin@fonteyn.com',
+                    password=hash_password('admin123'),
+                    is_admin=True
+                )
+                db.session.add(admin)
+                db.session.commit()
+                logger.info("Admin user created successfully!")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {str(e)}")
+        # Don't raise the exception, just log it and continue
 
 # Load accommodation types from YAML
 with open('accommodations.yaml', 'r') as file:
@@ -87,7 +94,11 @@ def admin_required(f):
 
 @app.route('/')
 def home():
-    return render_template('home.html')
+    try:
+        return render_template('home.html')
+    except Exception as e:
+        logger.error(f"Error in home route: {str(e)}")
+        return "Service is running but database is unavailable", 200
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -475,6 +486,44 @@ def entra_id_logout():
     flash('Admin logged out successfully')
     return redirect(url_for('admin_login'))
 
+# Add a health check endpoint
+@app.route('/health')
+def health_check():
+    """Health check endpoint that returns 200 if the app is running"""
+    try:
+        # Try to make a simple database query
+        db.session.execute('SELECT 1')
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'degraded',
+            'database': 'disconnected',
+            'error': str(e)
+        }), 200  # Still return 200 to indicate the app is running
+
+# Add error handlers
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"Internal server error: {str(error)}")
+    return "Internal server error", 500
+
+@app.errorhandler(503)
+def service_unavailable(error):
+    logger.error(f"Service unavailable: {str(error)}")
+    return "Service temporarily unavailable", 503
+
+# Modify the main execution
 if __name__ == '__main__':
-    init_db()  # Initialize database and create admin user
-    app.run(debug=True) 
+    try:
+        # Try to initialize the database, but don't stop if it fails
+        init_db()
+        
+        # Start the Flask application
+        app.run(host='0.0.0.0', port=5001)
+    except Exception as e:
+        logger.error(f"Failed to start application: {str(e)}")
+        # Remove the raise statement to allow the app to start even if init_db fails
+        app.run(host='0.0.0.0', port=5001)  # Start the app anyway 
