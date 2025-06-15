@@ -40,14 +40,22 @@ build_all:
     - echo "$TLS_KEY" > tls.key
     - kubectl delete secret hrm-tls-secret --ignore-not-found
     - kubectl create secret tls hrm-tls-secret --cert=tls.crt --key=tls.key
-    - kubectl apply -f ./HRM/k8s/ingress.yml
+    - kubectl delete secret booking-tls-secret --ignore-not-found
+    - kubectl create secret tls booking-tls-secret --cert=tls.crt --key=tls.key
+    - kubectl apply -f ./$APP_NAME/k8s/ingress.yml
     - shred -u tls.crt tls.key
 
-    - mkdir -p secure
-    - echo "$ENV_FILE" > ./secure/.env
+    - mkdir -p hrm_secure
+    - echo "$HRM_ENV_FILE" > ./hrm_secure/.env
+
+    - mkdir -p booking_secure
+    - echo "$BOOKING_ENV_FILE" > ./booking_secure/.env
 
     - kubectl delete configmap hrm-dotenv --ignore-not-found
-    - kubectl create configmap hrm-dotenv --from-file=.env=./secure/.env
+    - kubectl create configmap hrm-dotenv --from-file=.env=./hrm_secure/.env
+
+    - kubectl delete configmap booking-dotenv --ignore-not-found
+    - kubectl create configmap booking-dotenv --from-file=.env=./booking_secure/.env
 
 
     - sed "s|IMAGE_TAG|$CI_COMMIT_SHORT_SHA|g" ./$APP_NAME/k8s/deployment.yml | kubectl apply -f -
