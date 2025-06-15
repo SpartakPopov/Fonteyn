@@ -522,8 +522,8 @@ if __name__ == '__main__':
         init_db()
         
         # Start the Flask application
-        app.run(host='0.0.0.0', port=5001)
+        app.run(host='0.0.0.0', port=5000)
     except Exception as e:
         logger.error(f"Failed to start application: {str(e)}")
         # Remove the raise statement to allow the app to start even if init_db fails
-        app.run(host='0.0.0.0', port=5001)  # Start the app anyway 
+        app.run(host='0.0.0.0', port=5000)  # Start the app anyway 
