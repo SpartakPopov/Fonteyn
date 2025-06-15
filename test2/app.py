@@ -27,8 +27,11 @@ app.config['ERP_URL'] = "https://erpnext-fonteyn.duckdns.org"
 app.config['ERP_API_KEY'] = os.getenv('ERP_API_KEY')
 app.config['ERP_API_SECRET'] = os.getenv('ERP_API_SECRET')
 
-
-db.init_app(app)
+try:
+    db.init_app(app)
+except Exception as e:
+    print(f"Error initializing database: {e}")
+    raise
 
 # Ensure the instance folder exists
 if not os.path.exists('instance'):
