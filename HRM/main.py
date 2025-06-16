@@ -50,8 +50,6 @@ async def login_microsoft():
 
 @app.get("/auth/callback")
 async def auth_callback(request: Request):
-    print("CALLBACK URL:", request.url)
-    print("QUERY PARAMS:", dict(request.query_params))
     code = request.query_params.get("code")
     if not code:
         return HTMLResponse("Login failed: No code provided.", status_code=400)
