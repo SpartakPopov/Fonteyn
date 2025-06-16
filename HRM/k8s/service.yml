@@ -7,6 +7,6 @@ spec:
     app: hrm
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8000
+      port: 443
+      targetPort: 443
   type: ClusterIP
