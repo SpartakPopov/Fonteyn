@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
 
 templates = Jinja2Templates(directory="templates")
 
-hrm_app = FastAPI()
-hrm_app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
-hrm_app.mount("/static", StaticFiles(directory="static"), name="static")
+app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
@@ -313,4 +313,4 @@ async def logout(request: Request):
     return RedirectResponse(url=azure_logout_url)
 
 main_app = FastAPI()
-main_app.mount("/hrm", hrm_app)
+main_app.mount("/hrm", app)
