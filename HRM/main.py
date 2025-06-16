@@ -93,7 +93,7 @@ async def register_get(request: Request):
     user = request.session.get("user")
     logger.debug(f"Register GET - Session user: {user}")
     if not user:
-        return RedirectResponse(url="/login/microsoft", status_code=303)
+        return RedirectResponse(url="/hrm/login/microsoft", status_code=303)
     if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
         raise HTTPException(status_code=403, detail="Only HRMadministrator members can access this page.")
 
@@ -120,7 +120,7 @@ async def register_post(
     user = request.session.get("user")
     logger.debug(f"Register POST - Session user: {user}")
     if not user:
-        return RedirectResponse(url="/login/microsoft", status_code=303)
+        return RedirectResponse(url="/hrm/login/microsoft", status_code=303)
     if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
         raise HTTPException(status_code=403, detail="Only HRMadministrator members can register users.")
     
@@ -151,14 +151,14 @@ async def register_post(
                 status_code=400
             )
 
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return RedirectResponse(url="/hrm/dashboard", status_code=303)
 
 @app.get("/edit_user/{user_id}", response_class=HTMLResponse)
 async def edit_user_get(request: Request, user_id: str):
     user = request.session.get("user")
     logger.debug(f"Edit User GET - Session user: {user}")
     if not user:
-        return RedirectResponse(url="/login/microsoft", status_code=303)
+        return RedirectResponse(url="/hrm/login/microsoft", status_code=303)
     if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
         raise HTTPException(status_code=403, detail="Only HRMadministrator members can edit users.")
 
@@ -193,7 +193,7 @@ async def edit_user_post(
     user = request.session.get("user")
     logger.debug(f"Edit User POST - Session user: {user}")
     if not user:
-        return RedirectResponse(url="/login/microsoft", status_code=303)
+        return RedirectResponse(url="/hrm/login/microsoft", status_code=303)
     if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
         raise HTTPException(status_code=403, detail="Only HRMadministrator members can edit users.")
 
@@ -244,7 +244,7 @@ async def edit_user_post(
             status_code=400
         )
 
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return RedirectResponse(url="/hrm/dashboard", status_code=303)
         
 
 
@@ -276,7 +276,7 @@ async def delete_user_post(request: Request, user_id: str):
 async def dashboard(request: Request):
     user = request.session.get("user")
     if not user:
-        return RedirectResponse(url="/login/microsoft", status_code=303)
+        return RedirectResponse(url="/hrm/login/microsoft", status_code=303)
 
     users = get_all_users(user["access_token"])
     if not users:
