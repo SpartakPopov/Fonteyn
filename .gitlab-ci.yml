@@ -38,11 +38,9 @@ build_all:
   script:
     - echo "$TLS_CRT" > tls.crt
     - echo "$TLS_KEY" > tls.key
-    - kubectl delete secret hrm-tls-secret --ignore-not-found
-    - kubectl create secret tls hrm-tls-secret --cert=tls.crt --key=tls.key
     - kubectl delete secret booking-tls-secret --ignore-not-found
     - kubectl create secret tls booking-tls-secret --cert=tls.crt --key=tls.key
-    - kubectl apply -f ./$APP_NAME/k8s/ingress.yml
+    - kubectl apply -f ./test2/k8s/ingress.yml
     - shred -u tls.crt tls.key
 
     - mkdir -p hrm_secure
