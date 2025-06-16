@@ -9,8 +9,7 @@ spec:
   tls:
     - secretName: booking-tls-secret
   rules:
-    - host: booking.fonteyn.com
-      http:
+    - http:
         paths:
           - path: /booking
             pathType: Prefix
