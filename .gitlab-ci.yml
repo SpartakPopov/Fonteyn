@@ -36,12 +36,17 @@ build_all:
     - export KUBECONFIG=$PWD/kubeconfig
     - kubelogin convert-kubeconfig --login spn --client-id "$AZ_CLIENT_ID" --client-secret "$AZ_CLIENT_SECRET" --tenant-id "$AZ_TENANT_ID"
   script:
-    - echo "$TLS_CRT" > tls.crt
-    - echo "$TLS_KEY" > tls.key
+    - echo "$HRM_TLS_CRT" > hrm_tls.crt
+    - echo "$HRM_TLS_KEY" > hrm_tls.key
+    - echo "$BOOKING_TLS_CRT" > booking_tls.crt
+    - echo "$BOOKING_TLS_KEY" > booking_tls.key
+    - kubectl delete secret hrm-tls-secret --ignore-not-found
+    - kubectl create secret tls hrm-tls-secret --cert=hrm_tls.crt --key=hrm_tls.key
     - kubectl delete secret booking-tls-secret --ignore-not-found
-    - kubectl create secret tls booking-tls-secret --cert=tls.crt --key=tls.key
-    - kubectl apply -f ./test2/k8s/ingress.yml
-    - shred -u tls.crt tls.key
+    - kubectl create secret tls booking-tls-secret --cert=booking_tls.crt --key=booking_tls.key
+    - kubectl apply -f ./$APP_NAME/k8s/ingress.yml
+    - shred -u hrm_tls.crt hrm_tls.key
+    - shred -u booking_tls.crt booking_tls.key
 
     - mkdir -p hrm_secure
     - echo "$HRM_ENV_FILE" > ./hrm_secure/.env
