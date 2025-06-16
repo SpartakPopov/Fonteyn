@@ -306,7 +306,7 @@
 
 <script>
 function updateEnergyData() {
-    fetch('/api/energy/current')
+    fetch('/booking/api/energy/current')
         .then(response => response.json())
         .then(data => {
             const currentUsage = data.current_usage;
@@ -468,7 +468,7 @@ function initEnergyChart(data) {
 
 // Fetch and update energy history data
 function updateEnergyHistory() {
-    fetch('/api/energy/history')
+    fetch('/booking/api/energy/history')
         .then(response => response.json())
         .then(data => {
             initEnergyChart(data);

@@ -4,6 +4,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from models import EnergyUsageDaily, db
 from flask import current_app
+import time
 
 load_dotenv()
 
@@ -65,3 +66,4 @@ class EnergyMonitor:
 
 # Create a global instance
 energy_monitor = EnergyMonitor() 
+    
