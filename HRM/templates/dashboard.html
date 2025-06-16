@@ -11,7 +11,7 @@
     {% if is_hrm_admin %}
         <a href="/register" class="btn">Register New User</a><br><br>
     {% endif %}
-    <a href="/logout" class="btn">Logout</a>
+    <a href="/hrm/logout" class="btn">Logout</a>
     <h3>Employee List</h3>
     <table border="1">
         <tr>
@@ -29,8 +29,8 @@
             <td>{{ employee[3] }}</td>
             {% if is_hrm_admin %}
             <td>
-                <a href="/edit_user/{{ employee[0] }}">Edit</a>
-                <form action="/delete_user/{{ employee[0] }}" method="post" style="display:inline;">
+                <a href="/hrm/edit_user/{{ employee[0] }}">Edit</a>
+                <form action="/hrm/delete_user/{{ employee[0] }}" method="post" style="display:inline;">
                     <input type="submit" value="Delete" onclick="return confirm('Are you sure you want to delete this user?');">
                 </form>
             </td>

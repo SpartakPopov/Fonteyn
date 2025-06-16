@@ -4,7 +4,6 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from urllib.parse import urlencode
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 import logging
 from environment import AZURE_REDIRECT_URI, AZURE_SCOPE, SECRET_KEY, AZURE_AUTHORITY, HRM_ADMIN_GROUP_ID
 from azure import (
@@ -28,7 +27,6 @@ templates = Jinja2Templates(directory="templates")
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
-app.add_middleware(HTTPSRedirectMiddleware)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
