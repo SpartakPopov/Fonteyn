@@ -9,9 +9,10 @@ spec:
   tls:
     - secretName: hrm-tls-secret
   rules:
-    - http:
+    - host: hrm.fonteyn.com
+      http:
         paths:
-          - path: /
+          - path: /hrm
             pathType: Prefix
             backend:
               service:
