@@ -16,6 +16,7 @@ import requests
 import time
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 import logging
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 load_dotenv()
 
@@ -35,6 +36,11 @@ try:
 except Exception as e:
     print(f"Error initializing database: {e}")
     raise
+
+# Ingress middleware to handle multiple applications
+application = DispatcherMiddleware(Flask('dummy_app'), {
+    '/booking': app
+})
 
 # Ensure the instance folder exists
 if not os.path.exists('instance'):
@@ -518,12 +524,13 @@ def service_unavailable(error):
 # Modify the main execution
 if __name__ == '__main__':
     try:
-        # Try to initialize the database, but don't stop if it fails
         init_db()
-        
-        # Start the Flask application
-        app.run(host='0.0.0.0', port=5000)
+        from werkzeug.middleware.dispatcher import DispatcherMiddleware
+        application = DispatcherMiddleware(Flask('dummy_app'), {'/booking': app})
+        from waitress import serve
+        serve(application, host='0.0.0.0', port=5000)
     except Exception as e:
         logger.error(f"Failed to start application: {str(e)}")
-        # Remove the raise statement to allow the app to start even if init_db fails
-        app.run(host='0.0.0.0', port=5000)  # Start the app anyway 
+        application = DispatcherMiddleware(Flask('dummy_app'), {'/booking': app})
+        from waitress import serve
+        serve(application, host='0.0.0.0', port=5000)

@@ -4,7 +4,7 @@ metadata:
   name: hrm-ingress
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   tls:
@@ -12,10 +12,10 @@ spec:
   rules:
     - http:
         paths:
-          - path: /hrm
+          - path: /hrm(/|$)(.*)
             pathType: Prefix
             backend:
               service:
                 name: hrm-service
                 port:
-                  number: 8000
+                  number: 8000 
