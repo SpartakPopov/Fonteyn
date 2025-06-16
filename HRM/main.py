@@ -84,7 +84,7 @@ async def auth_callback(request: Request):
             "groups": groups
         }
         logger.debug(f"Session user data: {request.session['user']}")
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return RedirectResponse(url="/hrm/dashboard", status_code=303)
 
     return HTMLResponse(f"Login failed: {result.get('error_description')}", status_code=400)
 
@@ -253,13 +253,13 @@ async def delete_user_post(request: Request, user_id: str):
     user = request.session.get("user")
     logger.debug(f"Delete User POST - Session user: {user}")
     if not user:
-        return RedirectResponse(url="/login/microsoft", status_code=303)
+        return RedirectResponse(url="/hrm/login/microsoft", status_code=303)
     if not any(group["id"] == HRM_ADMIN_GROUP_ID for group in user.get("groups", [])):
         raise HTTPException(status_code=403, detail="Only HRMadministrator members can delete users.")
     
     if user_id == user["id"]:
         request.session["error_message"] = "Cannot delete your own account."
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return RedirectResponse(url="/hrm/dashboard", status_code=303)
 
     result = delete_user(user["access_token"], user_id)
     if isinstance(result, tuple):
@@ -267,10 +267,10 @@ async def delete_user_post(request: Request, user_id: str):
         error_message = error_response.get("error", {}).get("message", "Failed to delete user in Entra ID.")
         logger.error(f"Delete error: {status_code} - {error_message} - Full response: {error_response}")
         request.session["error_message"] = f"Failed to delete user: {error_message}"
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return RedirectResponse(url="/hrm/dashboard", status_code=303)
 
     request.session["success_message"] = "User deleted successfully."
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return RedirectResponse(url="/hrm/dashboard", status_code=303)
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
