@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
-from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+from starlette.middleware import ProxyHeadersMiddleware
 import logging
 from environment import AZURE_REDIRECT_URI, AZURE_SCOPE, SECRET_KEY, AZURE_AUTHORITY, HRM_ADMIN_GROUP_ID
 from azure import (
