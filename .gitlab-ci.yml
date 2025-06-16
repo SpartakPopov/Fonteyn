@@ -45,8 +45,6 @@ build_all:
     - kubectl delete secret booking-tls-secret --ignore-not-found
     - kubectl create secret tls booking-tls-secret --cert=booking_tls.crt --key=booking_tls.key
     - kubectl apply -f ./$APP_NAME/k8s/ingress.yml
-    - shred -u hrm_tls.crt hrm_tls.key
-    - shred -u booking_tls.crt booking_tls.key
 
     - mkdir -p hrm_secure
     - echo "$HRM_ENV_FILE" > ./hrm_secure/.env
