@@ -31,11 +31,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
-    return RedirectResponse(url="/login/microsoft")
+    return RedirectResponse(url="/hrm/login/microsoft")
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_get(request: Request):
-    return RedirectResponse(url="/login/microsoft")
+    return RedirectResponse(url="/hrm/login/microsoft")
 
 @app.get("/login/microsoft")
 async def login_microsoft():
@@ -307,7 +307,7 @@ async def dashboard(request: Request):
 async def logout(request: Request):
     request.session.clear()
     tenant = AZURE_AUTHORITY.split('/')[-1]
-    post_logout_redirect_uri = "https://128.251.115.172/auth/callback"
+    post_logout_redirect_uri = "https://128.251.115.172/hrm/auth/callback"
     params = urlencode({"post_logout_redirect_uri": post_logout_redirect_uri})
     azure_logout_url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/logout?{params}"
     return RedirectResponse(url=azure_logout_url)
