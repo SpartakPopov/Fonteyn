@@ -6,6 +6,8 @@ WORKDIR /app
 
 COPY . .
 
+COPY BaltimoreCyberTrustRoot.crt.pem /app/BaltimoreCyberTrustRoot.crt.pem
+
 RUN apt-get update && apt-get install -y bash
 RUN pip3 install --no-cache-dir -r requirements.txt
 RUN chmod +x ./start.sh

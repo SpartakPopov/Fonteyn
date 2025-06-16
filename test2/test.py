@@ -6,7 +6,7 @@ try:
         user="FonteynDb@dev-flexibleserver",
         password="Admin@123",
         database="hrm",
-        ssl_ca="BaltimoreCyberTrustRoot.crt.pem"
+        ssl_ca="/app/BaltimoreCyberTrustRoot.crt.pem"
     )
     print("Connected!")
     conn.close()
