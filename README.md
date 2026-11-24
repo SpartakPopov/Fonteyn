@@ -1,93 +1,183 @@
-# fonteyn_project
+Fonteyn Holiday Parks – Cloud Migration
 
+A student project (Fontys, team Cloud Mesh) that moves the IT of a fictional multi-park holiday company, Fonteyn Holiday Parks, from separate on-site setups to one centralized Azure environment.
 
+Status: archived. Built in 2025 as a school project and not maintained since.
 
-## Getting started
+1. What is this project?
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+Fonteyn runs holiday parks in several countries (for example Germany and Belgium). Each park had its own IT, its own booking software and its own barrier hardware, which made everything expensive to run and hard to integrate. The assignment was to centralize that in the cloud and cover four needs:
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Need	What we built
+Booking	A guest-facing web app to browse accommodations (villa, cottage and others), register, log in and make reservations. Admins get a dashboard to create, update and delete reservations.
+Staff / HR access management	An HRM portal where staff sign in with Microsoft and admins manage users and group memberships in Entra ID. Access follows job title and team role.
+Energy monitoring	A dashboard with live and 30-day energy consumption, so the environmental team can track CO₂ impact. The readings are simulated, not from real sensors.
+Access barrier	A Raspberry Pi with a camera that reads license plates (OpenALPR) and checks them against reservations. It keeps a local SQLite copy of the reservations so the barrier still works during an internet outage.
+Architecture
+                      Microsoft Entra ID tenant
+          (users, groups, app registrations, SSO for both apps)
+                                  │
+ Internet ── HTTPS ──►  Azure Virtual Network
+                       ┌─────────────────────────────────────────┐
+                       │  Web tier (Docker containers)           │
+                       │   /booking  → Booking app (Flask)       │
+                       │   /hrm      → HRM portal (FastAPI)      │
+                       │                 │                       │
+                       │  Data tier      ▼                       │
+                       │   Azure Database for MySQL              │
+                       └─────────────────────────────────────────┘
+                                      ▲
+     Raspberry Pi at the park gate ───┘  (syncs reservations, reads plates)
 
-## Add your files
+The Azure environment was built by hand in the Azure portal, without Terraform or any other infrastructure-as-code. It consists of an Entra ID organisation and a virtual network that holds the web server and the database. Only the application code and the container and Kubernetes manifests are in this repository.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+The Azure team worked with separate Core, Dev and Prod environments and a <env>-<service>-<type> naming convention (for example dev-app-storage). See documents/Fonteyn_Azure_Manual_Team_Guide.pdf.
 
-```
-cd existing_repo
-git remote add origin https://git.fhict.nl/I547283/fonteyn_project.git
-git branch -M main
-git push -uf origin main
-```
+2. Tech stack
 
-## Integrate with your tools
+Applications
 
-- [ ] [Set up project integrations](https://git.fhict.nl/I547283/fonteyn_project/-/settings/integrations)
+Component	Technology
+Booking app (test2/)	Python 3.13, Flask, Flask-SQLAlchemy, Waitress, Jinja2 templates, bcrypt
+HRM portal (HRM/)	Python 3.13, FastAPI, Uvicorn, Starlette sessions, Jinja2 templates
+Authentication	Microsoft Entra ID (OAuth 2.0 / OIDC) through MSAL, Microsoft Graph API for user and group management
+Database	MySQL (Azure Database for MySQL Flexible Server, SSL enforced)
+Gate controller (Raspberry Pi/)	Python, OpenCV, OpenALPR, libcamera, SQLAlchemy and SQLite, schedule
+Integrations	ERPNext (REST API) for accounting and ERP data
 
-## Collaborate with your team
+Cloud and DevOps
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+Area	Technology
+Cloud	Microsoft Azure, created manually in the portal (no IaC)
+Identity	Microsoft Entra ID organisation
+Network	Azure virtual network with a web server tier and a database tier
+Containers	Docker and Docker Compose, images in Azure Container Registry (fonteyncr.azurecr.io)
+Orchestration	Kubernetes manifests (Deployment, Service, Ingress) with NGINX ingress and TLS
+CI/CD	GitLab CI (.gitlab-ci.yml): build and push images, then deploy
+3. How to deploy
+Prerequisites (Azure, created manually)
+A Microsoft Entra ID tenant with two app registrations, one for Booking and one for HRM. Each needs a redirect URI and a client secret.
+Booking redirect: https://<host>/booking/admin/msauth
+HRM redirect: the AZURE_REDIRECT_URI value, ending in /hrm/auth/callback
+HRM needs these Microsoft Graph permissions, with admin consent: User.Read, User.Read.All, User.ReadWrite.All, GroupMember.Read.All, Group.Read.All, Directory.ReadWrite.All
+Create an Entra group for HRM admins and note its object ID (HRM_ADMIN_GROUP_ID).
+A virtual network with a web tier (the hosts or nodes running the containers) and a database tier.
+An Azure Database for MySQL Flexible Server reachable from the web tier, with an empty database. The Booking app creates its tables and a default admin account on first start.
+An Azure Container Registry. The manifests expect fonteyncr.azurecr.io, so change the name in docker-compose.yml and in the k8s/deployment.yml files if you use another.
+For the Kubernetes route, an AKS cluster with the NGINX ingress controller installed. The pods use nodeSelector labels, so label one node app=booking and one app=hrm.
+Configuration
 
-## Test and Deploy
+Both apps read a .env file. Never commit it.
 
-Use the built-in continuous integration in GitLab.
+Booking (test2/.env)
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+env
+DB_HOST=
+DB_USER=
+DB_PASSWORD=
+DB_NAME=
+ERP_API_KEY=
+ERP_API_SECRET=
+CLIENT_ID=                 # Entra app registration
+CLIENT_SECRET=
+ENTRA_ID_AUTHORITY=https://login.microsoftonline.com/<tenant-id>
+REDIRECT_URI=https://<host>/booking/admin/msauth
+ENTRA_ID_SCOPE=User.Read
 
-***
+HRM (HRM/.env)
 
-# Editing this README
+env
+SECRET_KEY=
+API_KEY=
+AZURE_CLIENT_ID=
+AZURE_CLIENT_SECRET=
+AZURE_AUTHORITY=https://login.microsoftonline.com/<tenant-id>
+AZURE_REDIRECT_URI=https://<host>/hrm/auth/callback
+HRM_ADMIN_GROUP_ID=
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+HRM/.env_example uses older variable names. Use the names above, which are what HRM/environment.py reads.
 
-## Suggestions for a good README
+Raspberry Pi (Raspberry Pi/.env): DB_HOST, DB_USER, DB_PASSWORD, DB_NAME.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Option A: run locally
+bash
+# Booking app  ->  http://localhost:5000/booking
+cd test2
+pip install -r requirements.txt
+python app.py
 
-## Name
-Choose a self-explaining name for your project.
+# HRM portal   ->  http://localhost:8000/hrm
+cd HRM
+pip install -r requirements.txt
+uvicorn main:main_app --host 0.0.0.0 --port 8000
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Or build both images with Docker Compose. This needs HRM/.env to exist, and the Booking app needs a .env in test2/ (it is copied into the image at build time):
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+bash
+docker-compose up --build -d
+Option B: deploy to Azure with GitLab CI
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+Push to the default branch and the pipeline in .gitlab-ci.yml does the following:
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+build: runs docker-compose up --build, tags both images with the short commit SHA and pushes them to Azure Container Registry.
+deploy (deploy_booking, deploy_hrm): logs in to Azure with a service principal, fetches AKS credentials, creates the TLS secrets and the .env ConfigMaps, then applies the Ingress, Deployment (with the image tag filled in) and Service manifests.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Set these CI/CD variables in GitLab first:
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+Variable	Purpose
+REGISTRY_USER, REGISTRY_PASSWORD	Azure Container Registry login
+AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT_ID	Service principal used by the pipeline
+AKS_RG, AKS_CLUSTER	Resource group and name of the AKS cluster
+HRM_TLS_CRT, HRM_TLS_KEY	TLS certificate and key for the HRM ingress
+BOOKING_TLS_CRT, BOOKING_TLS_KEY	TLS certificate and key for the Booking ingress
+HRM_ENV_FILE, BOOKING_ENV_FILE	Full contents of each app's .env
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+After deployment the apps are served behind the ingress at /booking and /hrm. The Booking app also exposes /health.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+Raspberry Pi gate controller
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+On a Pi with a camera module:
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+bash
+sudo apt install libcamera-apps openalpr openalpr-utils
+cd "Raspberry Pi"
+pip install -r requirements.txt
+python main.py
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+It syncs reservations from MySQL into the local license-plate.db every 10 seconds, captures frames and logs whether each detected plate is expected to check in.
 
-## License
-For open source projects, say how it is licensed.
+4. Repository layout
+.
+├── .gitlab-ci.yml          # CI/CD: build images -> push to ACR -> deploy to AKS
+├── docker-compose.yml      # Builds the booking and hrm images
+├── test2/                  # Booking app (Flask): the deployed guest-facing app
+│   ├── app.py              #   routes, admin dashboard, energy API, /health
+│   ├── entra_auth.py       #   Entra ID (MSAL) login
+│   ├── models.py           #   User, Reservation, EnergyUsageDaily
+│   ├── energy.py           #   simulated energy-usage monitor
+│   ├── accommodations.yaml #   accommodation types and prices
+│   ├── templates/, static/ #   Jinja2 pages and CSS
+│   ├── k8s/                #   Deployment, Service, Ingress
+│   └── README_ENTRA_ID.md  #   Entra ID setup notes for the booking app
+├── HRM/                    # HR / identity portal (FastAPI)
+│   ├── main.py             #   routes: login, dashboard, user create/edit/delete
+│   ├── azure.py            #   Microsoft Graph helpers (users, groups)
+│   ├── environment.py      #   env var loading
+│   ├── templates/, static/
+│   └── k8s/                #   Deployment, Service, Ingress
+├── Raspberry Pi/           # Gate controller: license-plate recognition + local DB
+├── backend/                # Early FastAPI + JWT API prototype (not deployed)
+├── reservation_system/     # Early domain-model prototype (not deployed)
+└── documents/              # Project plan, design document, sprint backlogs and
+                            # reviews, GDPR, business continuity and capacity
+                            # plans, user guide, Azure team guide
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+The folder test2/ is the production Booking app. It kept its original working name.
+
+Documentation
+
+Planning, design and compliance material lives in documents/. Start with Project_Plan_-_Cloud_Mesh_v2.docx and Design_Document_Cloud_Mesh_draft1.docx.
+
+Authors
+
+Team Cloud Mesh, Fontys University of Applied Sciences.
